@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { KpiPanel } from "@/components/gutachten/KpiPanel";
@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getAuftraege, addAuftrag, patchAuftrag, removeAuftrag } from "@/lib/auftraege.functions";
-import { lockSite } from "@/lib/gate.functions";
+import { lockSite, getGateStatus } from "@/lib/gate.functions";
 import { ampel, berechneKpi, type Auftrag, type Phase } from "@/lib/gutachten";
 
 const TITEL = "Gutachten-Cockpit – Fristen & Auftragssteuerung";
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  loader: () => getAuftraege(),
+  loader: async () => ({ auftraege: await getAuftraege(), gate: await getGateStatus() }),
   errorComponent: () => (
     <div className="flex min-h-screen items-center justify-center px-6">
       <p className="text-sm text-muted-foreground">
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const router = useRouter();
-  const geladene = Route.useLoaderData();
+  const { auftraege: geladene, gate } = Route.useLoaderData();
   const [auftraege, setAuftraege] = useState<Auftrag[]>(geladene);
   const [suche, setSuche] = useState("");
 
@@ -145,6 +145,11 @@ function Dashboard() {
               className="w-56 bg-background"
             />
             <NeuerAuftragDialog onCreate={(a) => void anlegen(a)} />
+            {gate.admin && (
+              <Button variant="outline" asChild>
+                <Link to="/admin/passwort">Passwort ändern</Link>
+              </Button>
+            )}
             <Button variant="outline" onClick={() => void sperren()}>
               Sperren
             </Button>

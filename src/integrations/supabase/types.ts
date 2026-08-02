@@ -68,6 +68,33 @@ export type Database = {
         }
         Relationships: []
       }
+      gate_credentials: {
+        Row: {
+          created_at: string
+          id: string
+          iterations: number
+          password_hash: string
+          salt: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          iterations?: number
+          password_hash: string
+          salt: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          iterations?: number
+          password_hash?: string
+          salt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
