@@ -8,36 +8,8 @@
 import { getRequestIP } from "@tanstack/react-start/server";
 import type { Auftrag } from "./gutachten";
 import type { AuftragPatch, NeuerAuftrag } from "./auftraege.server";
+import type { HistorieAktion, HistorieEintrag } from "./historie";
 
-export type HistorieAktion = "angelegt" | "geaendert" | "geloescht";
-
-export type HistorieEintrag = {
-  id: string;
-  auftrag_id: string | null;
-  aktenzeichen: string;
-  aktion: HistorieAktion;
-  feld: string | null;
-  wert_alt: string | null;
-  wert_neu: string | null;
-  rolle: string | null;
-  ip: string | null;
-  created_at: string;
-};
-
-export const FELD_LABEL: Record<string, string> = {
-  aktenzeichen: "Aktenzeichen",
-  auftraggeber: "Auftraggeber",
-  fach: "Fachgebiet",
-  gutachterKuerzel: "Gutachterkürzel",
-  auftragEingangAm: "Auftragseingang",
-  terminAm: "Termin",
-  fristAm: "Frist",
-  phase: "Phase",
-  zusatz: "Zusatzgutachten",
-  abrechnungsdatenKomplett: "Abrechnungsdaten",
-  fristverlaengerungen: "Fristverlängerungen",
-  notiz: "Notiz",
-};
 
 function ip(): string | null {
   try {
