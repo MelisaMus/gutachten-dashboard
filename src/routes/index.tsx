@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getAuftraege, addAuftrag, patchAuftrag, removeAuftrag } from "@/lib/auftraege.functions";
-import { lockSite } from "@/lib/gate.functions";
+import { lockSite, getGateStatus } from "@/lib/gate.functions";
 import { ampel, berechneKpi, type Auftrag, type Phase } from "@/lib/gutachten";
 
 const TITEL = "Gutachten-Cockpit – Fristen & Auftragssteuerung";
