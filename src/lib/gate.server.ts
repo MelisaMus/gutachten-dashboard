@@ -153,6 +153,93 @@ async function teamPasswordMatches(password: string): Promise<boolean> {
   return constantTimeEquals(hash, credential.password_hash);
 }
 
+/** Gültigkeitsdauer einer Reset-Freigabe in Minuten. */
+const RESET_GUELTIG_MINUTEN = 30;
+
+function sha256Hex(wert: string): string {
+  return createHash("sha256").update(wert, "utf8").digest("hex");
+}
+
+/**
+ * Erzeugt eine zeitlich begrenzte, einmalig nutzbare Freigabe, mit der ein
+ * neues Team-Passwort gesetzt werden kann – ohne das Admin-Secret
+ * (SITE_PASSWORD) zu verändern oder weiterzugeben. Nur für Admins.
+ */
+export async function createResetGrant(): Promise<{ token: string; gueltigBis: string }> {
+  await requireAdmin();
+  const token = toHex(crypto.getRandomValues(new Uint8Array(32)).buffer);
+  const gueltigBis = new Date(Date.now() + RESET_GUELTIG_MINUTEN * 60_000).toISOString();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Ältere, noch offene Freigaben entwerten (nur eine aktive Freigabe zulassen).
+  await supabaseAdmin
+    .from("gate_reset_tokens")
+    .update({ used_at: new Date().toISOString() })
+    .is("used_at", null);
+  const { error } = await supabaseAdmin
+    .from("gate_reset_tokens")
+    .insert({ token_hash: sha256Hex(token), expires_at: gueltigBis, erstellt_von: "admin" });
+  if (error) throw new Error(error.message);
+  await protokolliere("reset_freigabe_erstellt", "admin");
+  return { token, gueltigBis };
+}
+
+type ResetRow = { id: string; expires_at: string; used_at: string | null };
+
+async function findGrant(token: string): Promise<ResetRow | null> {
+  const eingabe = token.trim();
+  if (!/^[0-9a-f]{64}$/.test(eingabe)) return null;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("gate_reset_tokens")
+    .select("id, expires_at, used_at")
+    .eq("token_hash", sha256Hex(eingabe))
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const row = (data as ResetRow | null) ?? null;
+  if (!row) return null;
+  if (row.used_at !== null) return null;
+  if (new Date(row.expires_at).getTime() <= Date.now()) return null;
+  return row;
+}
+
+/** Prüft eine Freigabe, ohne sie zu verbrauchen. */
+export async function checkResetGrant(token: string): Promise<{ gueltig: boolean; gueltigBis?: string }> {
+  const row = await findGrant(token);
+  return row ? { gueltig: true, gueltigBis: row.expires_at } : { gueltig: false };
+}
+
+/**
+ * Löst eine Freigabe ein und setzt das neue Team-Passwort. Die Freigabe ist
+ * danach verbraucht; das Admin-Passwort bleibt unverändert.
+ */
+export async function redeemResetGrant(
+  token: string,
+  neuesPasswort: string,
+): Promise<{ ok: true } | { ok: false; grund: "token" | "policy" }> {
+  const row = await findGrant(token);
+  if (!row) {
+    await protokolliere("reset_freigabe_fehlgeschlagen");
+    return { ok: false, grund: "token" };
+  }
+  const neu = neuesPasswort.trim();
+  const stark =
+    neu.length >= 12 && /[A-Za-z]/.test(neu) && /[0-9]/.test(neu) && /[^A-Za-z0-9]/.test(neu);
+  if (!stark || constantTimeEquals(neu, adminPassword())) {
+    await protokolliere("reset_freigabe_fehlgeschlagen");
+    return { ok: false, grund: "policy" };
+  }
+  await storeCredential(neu);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin
+    .from("gate_reset_tokens")
+    .update({ used_at: new Date().toISOString() })
+    .eq("id", row.id)
+    .is("used_at", null);
+  if (error) throw new Error(error.message);
+  await protokolliere("reset_freigabe_eingeloest", "team");
+  return { ok: true };
+}
+
 export async function unlock(password: string): Promise<boolean> {
   const eingabe = password.trim();
   const istAdmin = constantTimeEquals(eingabe, adminPassword());

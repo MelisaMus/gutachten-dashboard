@@ -95,6 +95,33 @@ export type Database = {
         }
         Relationships: []
       }
+      gate_reset_tokens: {
+        Row: {
+          created_at: string
+          erstellt_von: string
+          expires_at: string
+          id: string
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          erstellt_von?: string
+          expires_at: string
+          id?: string
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          erstellt_von?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       zugriff_protokoll: {
         Row: {
           created_at: string

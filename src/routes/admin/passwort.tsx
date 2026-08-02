@@ -4,7 +4,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { changeSitePassword, getPasswordChangeHistory } from "@/lib/gate.functions";
+import {
+  changeSitePassword,
+  createPasswordResetGrant,
+  getPasswordChangeHistory,
+} from "@/lib/gate.functions";
 
 const TITEL = "Admin – Passwort ändern | Gutachten-Cockpit";
 const BESCHREIBUNG =
@@ -62,6 +66,27 @@ function AdminPasswort() {
   const [wiederholung, setWiederholung] = useState("");
   const [zustand, setZustand] = useState<Zustand>({ art: "leer" });
   const [laeuft, setLaeuft] = useState(false);
+  const freigabeErzeugen = useServerFn(createPasswordResetGrant);
+  const [freigabe, setFreigabe] = useState<{ link: string; gueltigBis: string } | null>(null);
+  const [freigabeFehler, setFreigabeFehler] = useState(false);
+  const [freigabeLaeuft, setFreigabeLaeuft] = useState(false);
+
+  const neueFreigabe = async () => {
+    setFreigabeLaeuft(true);
+    setFreigabeFehler(false);
+    try {
+      const res = await freigabeErzeugen();
+      setFreigabe({
+        link: `${window.location.origin}/passwort-reset?token=${res.token}`,
+        gueltigBis: res.gueltigBis,
+      });
+      await router.invalidate();
+    } catch {
+      setFreigabeFehler(true);
+    } finally {
+      setFreigabeLaeuft(false);
+    }
+  };
 
   const regelnErfuellt =
     neu.length >= 12 && /[A-Za-z]/.test(neu) && /[0-9]/.test(neu) && /[^A-Za-z0-9]/.test(neu);
@@ -177,9 +202,49 @@ function AdminPasswort() {
         </form>
 
         <section className="mt-8 border-t border-border pt-6">
+          <h2 className="font-display text-base font-semibold">Zeitlich begrenzte Freigabe</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Erzeugt einen einmalig nutzbaren Link, mit dem das gemeinsame Bearbeitungspasswort neu
+            gesetzt werden kann – 30 Minuten gültig. Das Admin-Passwort bleibt unverändert. Eine
+            neue Freigabe entwertet alle älteren, noch offenen Freigaben.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3"
+            disabled={freigabeLaeuft}
+            onClick={() => void neueFreigabe()}
+          >
+            {freigabeLaeuft ? "Erzeuge …" : "Freigabe-Link erzeugen"}
+          </Button>
+          {freigabeFehler && (
+            <p className="mt-3 text-sm text-destructive">
+              Freigabe konnte nicht erstellt werden. Bitte erneut versuchen.
+            </p>
+          )}
+          {freigabe && (
+            <div className="mt-3 grid gap-2 rounded-md border border-border p-3">
+              <p className="text-xs text-muted-foreground">
+                Gültig bis {ZEIT.format(new Date(freigabe.gueltigBis))} · nur einmal verwendbar ·
+                bitte auf sicherem Weg übermitteln.
+              </p>
+              <code className="break-all text-xs">{freigabe.link}</code>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void navigator.clipboard.writeText(freigabe.link)}
+              >
+                Link kopieren
+              </Button>
+            </div>
+          )}
+        </section>
+
+        <section className="mt-8 border-t border-border pt-6">
           <h2 className="font-display text-base font-semibold">Änderungsprotokoll</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Letzte Passwortänderungen mit Zeitpunkt, Rolle, Ergebnis und IP-Adresse.
+            Letzte Passwortänderungen und Freigaben mit Zeitpunkt, Rolle, Ergebnis und
+            IP-Adresse.
           </p>
           {eintraege.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">
@@ -188,7 +253,17 @@ function AdminPasswort() {
           ) : (
             <ul className="mt-4 grid gap-2">
               {(eintraege as ProtokollEintrag[]).map((e) => {
-                const erfolg = e.ereignis === "passwort_geaendert";
+                const erfolg =
+                  e.ereignis === "passwort_geaendert" ||
+                  e.ereignis === "reset_freigabe_eingeloest" ||
+                  e.ereignis === "reset_freigabe_erstellt";
+                const beschriftung: Record<string, string> = {
+                  passwort_geaendert: "Passwort geändert",
+                  passwort_aenderung_fehlgeschlagen: "Änderung fehlgeschlagen",
+                  reset_freigabe_erstellt: "Freigabe erstellt",
+                  reset_freigabe_eingeloest: "Passwort per Freigabe gesetzt",
+                  reset_freigabe_fehlgeschlagen: "Freigabe fehlgeschlagen",
+                };
                 return (
                   <li
                     key={e.id}
@@ -198,7 +273,7 @@ function AdminPasswort() {
                       {ZEIT.format(new Date(e.created_at))}
                     </span>
                     <span className={erfolg ? "text-primary" : "text-destructive"}>
-                      {erfolg ? "erfolgreich geändert" : "fehlgeschlagen"}
+                      {beschriftung[e.ereignis] ?? e.ereignis}
                     </span>
                     <span className="text-muted-foreground">
                       Rolle: {e.rolle ?? "unbekannt"} · IP: {e.ip ?? "unbekannt"}

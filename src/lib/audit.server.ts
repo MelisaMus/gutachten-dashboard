@@ -13,7 +13,10 @@ export type AuditEreignis =
   | "freischaltung_fehlgeschlagen"
   | "sperrung"
   | "passwort_geaendert"
-  | "passwort_aenderung_fehlgeschlagen";
+  | "passwort_aenderung_fehlgeschlagen"
+  | "reset_freigabe_erstellt"
+  | "reset_freigabe_eingeloest"
+  | "reset_freigabe_fehlgeschlagen";
 
 export type AuditRolle = "admin" | "team" | null;
 
@@ -67,7 +70,13 @@ export async function lesePasswortHistorie(limit = 20): Promise<AuditEintrag[]> 
   const { data, error } = await supabaseAdmin
     .from("zugriff_protokoll")
     .select("id, ereignis, rolle, ip, user_agent, created_at")
-    .in("ereignis", ["passwort_geaendert", "passwort_aenderung_fehlgeschlagen"])
+    .in("ereignis", [
+      "passwort_geaendert",
+      "passwort_aenderung_fehlgeschlagen",
+      "reset_freigabe_erstellt",
+      "reset_freigabe_eingeloest",
+      "reset_freigabe_fehlgeschlagen",
+    ])
     .order("created_at", { ascending: false })
     .limit(Math.min(Math.max(limit, 1), 100));
   if (error) throw new Error(error.message);
