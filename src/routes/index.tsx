@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  loader: () => getAuftraege(),
+  loader: async () => ({ auftraege: await getAuftraege(), gate: await getGateStatus() }),
   errorComponent: () => (
     <div className="flex min-h-screen items-center justify-center px-6">
       <p className="text-sm text-muted-foreground">
