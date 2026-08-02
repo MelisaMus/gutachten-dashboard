@@ -202,7 +202,7 @@ function Dashboard() {
 
         <GutachterPanel auftraege={auftraege} />
 
-        <section className="panel p-5">
+        <section className="panel p-4 sm:p-5">
           <h2 className="font-display text-lg font-semibold">Datenschutz & Zugriff</h2>
           <ul className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
             <li>Zugang nur mit dem gemeinsamen Bearbeitungspasswort – nicht öffentlich sichtbar.</li>
