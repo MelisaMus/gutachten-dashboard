@@ -172,7 +172,7 @@ export function seedAuftraege(): Auftrag[] {
       terminAm: plusTage(-19),
       fristAm: plusTage(9),
       phase: "In Bearbeitung",
-      zusatz: [{ fach: "Orthopädie", beauftragtAm: plusTage(-46), eingegangen: true }],
+      zusatz: [],
       abrechnungsdatenKomplett: true,
       fristverlaengerungen: 0,
       notiz: "Rohfassung aus Vorlage erstellt.",
