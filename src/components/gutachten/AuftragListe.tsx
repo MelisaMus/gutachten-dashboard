@@ -126,7 +126,10 @@ export function AuftragListe({
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Select value={a.phase} onValueChange={(v) => onPhase(a.id, v as Phase)}>
-                <SelectTrigger className="h-9 w-56">
+                <SelectTrigger
+                  className="h-9 w-full sm:w-56"
+                  aria-label={`Bearbeitungsphase für ${a.aktenzeichen}`}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,11 +140,21 @@ export function AuftragListe({
                   ))}
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="outline" onClick={() => onVerlaengerung(a.id)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onVerlaengerung(a.id)}
+                aria-label={`Frist für ${a.aktenzeichen} um 4 Wochen verlängern`}
+              >
                 Fristverlängerung +4 Wochen
               </Button>
               {!a.abrechnungsdatenKomplett && (
-                <Button size="sm" variant="outline" onClick={() => onAbrechnung(a.id)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onAbrechnung(a.id)}
+                  aria-label={`Abrechnungsdaten für ${a.aktenzeichen} als vollständig markieren`}
+                >
                   Abrechnungsdaten vollständig
                 </Button>
               )}
@@ -153,6 +166,7 @@ export function AuftragListe({
                     size="sm"
                     variant="outline"
                     onClick={() => onZusatzEingang(a.id, z.fach)}
+                    aria-label={`Zusatzgutachten ${z.fach} für ${a.aktenzeichen} als eingegangen markieren`}
                   >
                     {z.fach} eingegangen
                   </Button>
@@ -160,12 +174,14 @@ export function AuftragListe({
               <Button
                 size="sm"
                 variant="ghost"
-                className="ml-auto text-muted-foreground"
+                className="text-muted-foreground sm:ml-auto"
                 onClick={() => onDelete(a.id)}
+                aria-label={`Auftrag ${a.aktenzeichen} entfernen`}
               >
                 Entfernen
               </Button>
             </div>
+
           </article>
         );
       })}
