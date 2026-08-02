@@ -12,7 +12,7 @@ const BESCHREIBUNG =
 
 export const Route = createFileRoute("/passwort-reset")({
   validateSearch: (search: Record<string, unknown>) => ({
-    token: typeof search.token === "string" ? search.token : "",
+    token: typeof search["token"] === "string" ? search["token"] : "",
   }),
   loaderDeps: ({ search: { token } }) => ({ token }),
   loader: ({ deps }) =>
