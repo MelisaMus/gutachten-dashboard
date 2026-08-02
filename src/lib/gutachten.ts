@@ -64,6 +64,15 @@ export const FACHGEBIETE: Fachgebiet[] = [
   "Sonstiges",
 ];
 
+/** Auswählbare Zusatzgutachten (Psychiatrie und Orthopädie treffen nicht zu) */
+export const ZUSATZ_FACHGEBIETE: Fachgebiet[] = [
+  "Neurologie",
+  "Neuropsychologie",
+  "Neurophysiologie",
+  "EEG",
+];
+
+
 export const AUFTRAGGEBER: Auftraggeber[] = [
   "Gericht",
   "Versicherung",
@@ -163,7 +172,7 @@ export function seedAuftraege(): Auftrag[] {
       terminAm: plusTage(-19),
       fristAm: plusTage(9),
       phase: "In Bearbeitung",
-      zusatz: [{ fach: "Orthopädie", beauftragtAm: plusTage(-46), eingegangen: true }],
+      zusatz: [],
       abrechnungsdatenKomplett: true,
       fristverlaengerungen: 0,
       notiz: "Rohfassung aus Vorlage erstellt.",
