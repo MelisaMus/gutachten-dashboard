@@ -6,6 +6,8 @@
 export type Fachgebiet =
   | "Neurologie"
   | "Neuropsychologie"
+  | "Neurophysiologie"
+  | "EEG"
   | "Orthopädie"
   | "Psychiatrie"
   | "Sonstiges";
@@ -55,6 +57,8 @@ export const PHASEN: Phase[] = [
 export const FACHGEBIETE: Fachgebiet[] = [
   "Neurologie",
   "Neuropsychologie",
+  "Neurophysiologie",
+  "EEG",
   "Orthopädie",
   "Psychiatrie",
   "Sonstiges",
