@@ -15,7 +15,7 @@
 import { useSession } from "@tanstack/react-start/server";
 import { redirect } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { protokolliere } from "./audit.server";
+import { aktuelleIp, ereignisseDerIp, protokolliere } from "./audit.server";
 
 export type GateSession = {
   unlocked?: boolean;
@@ -215,7 +215,11 @@ export async function checkResetGrant(token: string): Promise<{ gueltig: boolean
 export async function redeemResetGrant(
   token: string,
   neuesPasswort: string,
-): Promise<{ ok: true } | { ok: false; grund: "token" | "policy" }> {
+): Promise<{ ok: true } | { ok: false; grund: "token" | "policy" | "gesperrt" }> {
+  if ((await bremseStatus()).gesperrt) {
+    await protokolliere("ip_abgewiesen");
+    return { ok: false, grund: "gesperrt" };
+  }
   const row = await findGrant(token);
   if (!row) {
     await protokolliere("reset_freigabe_fehlgeschlagen");
@@ -240,19 +244,76 @@ export async function redeemResetGrant(
   return { ok: true };
 }
 
-export async function unlock(password: string): Promise<boolean> {
+/**
+ * Fehlversuchsbremse: nach zu vielen fehlgeschlagenen Versuchen aus derselben
+ * IP-Adresse wird die Anmeldung befristet gesperrt. Grundlage ist das
+ * serverseitige Zugriffsprotokoll (kein Zustand im Speicher, da Serverinstanzen
+ * zustandslos sind).
+ */
+export const BREMSE = { fensterMinuten: 15, maxVersuche: 5 } as const;
+
+async function bremseStatus(): Promise<{ gesperrt: boolean; sekunden: number; fehlversuche: number }> {
+  const ip = aktuelleIp();
+  if (!ip) return { gesperrt: false, sekunden: 0, fehlversuche: 0 };
+  let eintraege: { ereignis: string; created_at: string }[] = [];
+  try {
+    eintraege = await ereignisseDerIp(
+      ip,
+      ["freischaltung", "freischaltung_fehlgeschlagen", "reset_freigabe_fehlgeschlagen"],
+      BREMSE.fensterMinuten,
+    );
+  } catch {
+    // Protokoll nicht lesbar: Anmeldung nicht blockieren.
+    return { gesperrt: false, sekunden: 0, fehlversuche: 0 };
+  }
+  const fehl: { created_at: string }[] = [];
+  for (const e of eintraege) {
+    if (e.ereignis === "freischaltung") break; // erfolgreiche Anmeldung setzt zurück
+    fehl.push(e);
+  }
+  if (fehl.length < BREMSE.maxVersuche) {
+    return { gesperrt: false, sekunden: 0, fehlversuche: fehl.length };
+  }
+  const neuester = new Date(fehl[0]!.created_at).getTime();
+  const rest = Math.ceil((neuester + BREMSE.fensterMinuten * 60_000 - Date.now()) / 1000);
+  return rest > 0
+    ? { gesperrt: true, sekunden: rest, fehlversuche: fehl.length }
+    : { gesperrt: false, sekunden: 0, fehlversuche: fehl.length };
+}
+
+export type UnlockErgebnis =
+  | { ok: true }
+  | { ok: false; grund: "passwort"; verbleibendeVersuche: number }
+  | { ok: false; grund: "gesperrt"; sekunden: number };
+
+export async function unlock(password: string): Promise<UnlockErgebnis> {
+  const bremse = await bremseStatus();
+  if (bremse.gesperrt) {
+    await protokolliere("ip_abgewiesen");
+    return { ok: false, grund: "gesperrt", sekunden: bremse.sekunden };
+  }
+
   const eingabe = password.trim();
   const istAdmin = constantTimeEquals(eingabe, adminPassword());
   if (!istAdmin && !(await teamPasswordMatches(eingabe))) {
     await protokolliere("freischaltung_fehlgeschlagen");
-    return false;
+    const fehlversuche = bremse.fehlversuche + 1;
+    if (fehlversuche >= BREMSE.maxVersuche) {
+      await protokolliere("ip_gesperrt");
+      return { ok: false, grund: "gesperrt", sekunden: BREMSE.fensterMinuten * 60 };
+    }
+    return {
+      ok: false,
+      grund: "passwort",
+      verbleibendeVersuche: Math.max(BREMSE.maxVersuche - fehlversuche, 0),
+    };
   }
   const session = await useSession<GateSession>(sessionConfig());
   const jetzt = Date.now();
   await session.clear();
   await session.update({ unlocked: true, admin: istAdmin, begonnen: jetzt, gesehen: jetzt });
   await protokolliere("freischaltung", istAdmin ? "admin" : "team");
-  return true;
+  return { ok: true };
 }
 
 export async function lock(): Promise<void> {

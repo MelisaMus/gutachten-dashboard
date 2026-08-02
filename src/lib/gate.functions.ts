@@ -5,7 +5,7 @@ export const unlockSite = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ password: z.string().min(1).max(200) }).parse(data))
   .handler(async ({ data }) => {
     const { unlock } = await import("./gate.server");
-    return { ok: await unlock(data.password) };
+    return unlock(data.password);
   });
 
 export const lockSite = createServerFn({ method: "POST" }).handler(async () => {

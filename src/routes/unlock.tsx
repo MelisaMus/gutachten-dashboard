@@ -29,23 +29,36 @@ function Unlock() {
   const router = useRouter();
   const unlock = useServerFn(unlockSite);
   const [password, setPassword] = useState("");
-  const [fehler, setFehler] = useState(false);
+  const [meldung, setMeldung] = useState<string | null>(null);
+  const [gesperrt, setGesperrt] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLaeuft(true);
-    setFehler(false);
+    setMeldung(null);
     try {
-      const { ok } = await unlock({ data: { password } });
-      if (ok) {
+      const ergebnis = await unlock({ data: { password } });
+      if (ergebnis.ok) {
         await router.navigate({ to: "/", replace: true });
         router.invalidate();
         return;
       }
-      setFehler(true);
+      if (ergebnis.grund === "gesperrt") {
+        const minuten = Math.max(1, Math.ceil(ergebnis.sekunden / 60));
+        setGesperrt(true);
+        setMeldung(
+          `Zu viele Fehlversuche. Die Anmeldung ist für ca. ${minuten} Minute(n) gesperrt. Der Vorgang wurde protokolliert.`,
+        );
+        return;
+      }
+      setGesperrt(false);
+      setMeldung(
+        `Passwort ist nicht korrekt. Noch ${ergebnis.verbleibendeVersuche} Versuch(e) vor einer befristeten Sperre.`,
+      );
     } catch {
-      setFehler(true);
+      setGesperrt(false);
+      setMeldung("Passwort ist nicht korrekt.");
     } finally {
       setLaeuft(false);
     }
@@ -72,10 +85,15 @@ function Unlock() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={gesperrt}
             />
           </div>
-          {fehler && <p className="text-sm text-destructive">Passwort ist nicht korrekt.</p>}
-          <Button type="submit" disabled={laeuft || password.length === 0}>
+          {meldung && (
+            <p className="text-sm text-destructive" role="alert">
+              {meldung}
+            </p>
+          )}
+          <Button type="submit" disabled={laeuft || gesperrt || password.length === 0}>
             {laeuft ? "Prüfe …" : "Cockpit öffnen"}
           </Button>
         </form>

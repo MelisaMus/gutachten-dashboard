@@ -72,6 +72,8 @@ function PasswortReset() {
         setErfolg(true);
         setNeu("");
         setWiederholung("");
+      } else if (res.grund === "gesperrt") {
+        setFehler("Zu viele Fehlversuche. Bitte in einigen Minuten erneut versuchen.");
       } else if (res.grund === "token") {
         setFehler("Die Freigabe ist abgelaufen, bereits verwendet oder ungültig.");
       } else {
