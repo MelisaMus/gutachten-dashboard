@@ -52,3 +52,29 @@ export const getPasswordChangeHistory = createServerFn({ method: "GET" }).handle
   const { lesePasswortHistorie } = await import("./audit.server");
   return { eintraege: await lesePasswortHistorie(20) };
 });
+
+export const createPasswordResetGrant = createServerFn({ method: "POST" }).handler(async () => {
+  const { createResetGrant } = await import("./gate.server");
+  return createResetGrant();
+});
+
+export const checkPasswordResetGrant = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ token: z.string().min(1).max(200) }).parse(data))
+  .handler(async ({ data }) => {
+    const { checkResetGrant } = await import("./gate.server");
+    return checkResetGrant(data.token);
+  });
+
+export const redeemPasswordResetGrant = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        token: z.string().min(1).max(200),
+        neuesPasswort: z.string().min(12).max(200),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { redeemResetGrant } = await import("./gate.server");
+    return redeemResetGrant(data.token, data.neuesPasswort);
+  });

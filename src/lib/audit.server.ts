@@ -13,7 +13,10 @@ export type AuditEreignis =
   | "freischaltung_fehlgeschlagen"
   | "sperrung"
   | "passwort_geaendert"
-  | "passwort_aenderung_fehlgeschlagen";
+  | "passwort_aenderung_fehlgeschlagen"
+  | "reset_freigabe_erstellt"
+  | "reset_freigabe_eingeloest"
+  | "reset_freigabe_fehlgeschlagen";
 
 export type AuditRolle = "admin" | "team" | null;
 
