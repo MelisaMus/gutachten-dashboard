@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { KpiPanel } from "@/components/gutachten/KpiPanel";
 import { AuftragListe } from "@/components/gutachten/AuftragListe";
 import { GutachterPanel } from "@/components/gutachten/GutachterPanel";
+import { ProzessPanel } from "@/components/gutachten/ProzessPanel";
+
 import { NeuerAuftragDialog } from "@/components/gutachten/NeuerAuftragDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
