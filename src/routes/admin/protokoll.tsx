@@ -37,10 +37,15 @@ const LABEL: Record<string, string> = {
   sperrung: "Sperrung",
   passwort_geaendert: "Team-Passwort geändert",
   passwort_aenderung_fehlgeschlagen: "Passwortänderung abgelehnt",
+  reset_freigabe_erstellt: "Reset-Freigabe erstellt",
+  reset_freigabe_eingeloest: "Reset-Freigabe eingelöst",
+  reset_freigabe_fehlgeschlagen: "Reset-Freigabe abgelehnt",
+  ip_gesperrt: "IP befristet gesperrt (zu viele Fehlversuche)",
+  ip_abgewiesen: "Versuch während Sperre abgewiesen",
 };
 
 function istFehler(e: AuditEintrag) {
-  return e.ereignis.includes("fehlgeschlagen");
+  return e.ereignis.includes("fehlgeschlagen") || e.ereignis.startsWith("ip_");
 }
 
 function AdminProtokoll() {
