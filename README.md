@@ -6,31 +6,6 @@ ProzessschrittHauptproblemVerbesserungspotenzialTerminvereinbarungViele Telefona
 
 1. Terminierung automatisieren
 
-Hier liegt häufig das größte Einsparpotenzial.
-
-Statt
-
-Gutachter anschreiben
-
-Patient kontaktieren
-
-Termin abstimmen
-
-Gutachter erneut kontaktieren
-
-Verschiebungen organisieren
-
-könnte man ein System etablieren, bei dem
-
-jeder Gutachter feste Gutachtertage pro Monat definiert,
-
-Patienten automatisch freie Termine angeboten bekommen,
-
-Online-Terminbuchung oder Terminvorschläge erfolgen,
-
-automatische Erinnerungen (SMS/E-Mail) verschickt werden.
-
-Allein dadurch kann der Koordinationsaufwand um 50–70 % sinken.
 
 2. Klare Bearbeitungsfristen mit Transparenz
 
@@ -80,9 +55,7 @@ Wenn möglich:
 
 Bonus bei Einhaltung der Frist
 
-reduzierte Vergütung bei extremen Überschreitungen
 
-Das hängt allerdings vom Vertragsmodell ab.
 
 Feedback
 
@@ -142,13 +115,10 @@ Man könnte bereits bei Auftragseingang prüfen:
 
 Wird ein neuropsychologisches Gutachten benötigt?
 
-Wird Orthopädie benötigt?
-
-Wird Psychiatrie benötigt?
 
 Dann werden alle Zusatzgutachten gleichzeitig beauftragt.
 
-Nicht nacheinander.
+
 
 7. Abrechnung vorbereiten
 
@@ -162,7 +132,6 @@ Deshalb bereits beim Auftrag:
 
 ✓ Bankverbindung
 
-✓ Honorarvereinbarung
 
 Dann kann nach Eingang des letzten Gutachtens unmittelbar fakturiert werden.
 
@@ -212,11 +181,11 @@ Standardisierte Fristverlängerung nur bei Bedarf
 
 Sofortige Rechnungsstellung nach Eingang aller Gutachten
 
-Elektronische Rechnungsüberwachung bis Zahlung
+
 
 Der größte Hebel
 
-Aus Ihrer Schilderung würde ich die Maßnahmen nach erwarteter Wirkung priorisieren:
+Maßnahmen nach erwarteter Wirkung priorisieren:
 
 Verbindliche Gutachter-Slots mit digitaler Terminplanung – reduziert den Koordinationsaufwand erheblich.
 
@@ -228,7 +197,6 @@ Parallele Organisation von Haupt- und Zusatzgutachten – verhindert unnötige W
 
 Vollständige Abrechnungsdaten bereits bei Auftragseingang – verkürzt die Zeit bis zur Zahlung.
 
-Wenn Sie das Gutachtenwesen einer Universitätsklinik oder eines MVZ neu organisieren möchten, könnte man daraus auch ein Lean-Management-Konzept mit Prozessdiagramm (Ist-/Soll-Prozess), Verantwortlichkeiten (RACI-Matrix) und Kennzahlen (KPIs) entwickeln, das sich unmittelbar als Projektplan umsetzen lässt.
 
 This project was built with [Lovable](https://lovable.dev).
 
