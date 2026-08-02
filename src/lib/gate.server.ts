@@ -17,7 +17,20 @@ import { redirect } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { protokolliere } from "./audit.server";
 
-export type GateSession = { unlocked?: boolean; admin?: boolean };
+export type GateSession = {
+  unlocked?: boolean;
+  admin?: boolean;
+  /** Zeitpunkt der Freischaltung (ms) – begrenzt die absolute Sitzungsdauer. */
+  begonnen?: number;
+  /** Letzte Aktivität (ms) – Basis für die gleitende Verlängerung. */
+  gesehen?: number;
+};
+
+/** Sitzungsgrenzen in Sekunden: Inaktivität (gleitend) und absolutes Maximum. */
+const LIMITS = {
+  admin: { idle: 15 * 60, absolut: 2 * 60 * 60 },
+  team: { idle: 60 * 60, absolut: 8 * 60 * 60 },
+} as const;
 
 const ITERATIONS = 210_000;
 
@@ -27,9 +40,47 @@ function sessionConfig() {
   return {
     password,
     name: "gutachten-gate",
-    maxAge: 60 * 60 * 12,
-    cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
+    // Harte Obergrenze des Cookies; die feinere Steuerung erfolgt unten über
+    // Inaktivitäts- und Absolutgrenzen je Rolle.
+    maxAge: LIMITS.team.absolut,
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict" as const,
+      path: "/",
+    },
   };
+}
+
+/**
+ * Liest die Sitzung, prüft Inaktivitäts- und Absolutgrenze und verlängert bei
+ * gültiger Sitzung den Inaktivitätszeitraum (Sliding Expiration).
+ */
+async function activeSession(): Promise<GateSession> {
+  const session = await useSession<GateSession>(sessionConfig());
+  const daten = session.data;
+  if (daten.unlocked !== true) return {};
+
+  const rolle = daten.admin === true ? "admin" : "team";
+  const grenzen = LIMITS[rolle];
+  const jetzt = Date.now();
+  const begonnen = daten.begonnen ?? jetzt;
+  const gesehen = daten.gesehen ?? jetzt;
+
+  const abgelaufen =
+    jetzt - gesehen > grenzen.idle * 1000 || jetzt - begonnen > grenzen.absolut * 1000;
+
+  if (abgelaufen) {
+    await session.clear();
+    await protokolliere("sperrung", rolle);
+    return {};
+  }
+
+  // Gleitende Verlängerung: nur schreiben, wenn sich der Wert merklich ändert.
+  if (jetzt - gesehen > 60_000) {
+    await session.update({ ...daten, begonnen, gesehen: jetzt });
+  }
+  return { ...daten, begonnen, gesehen: jetzt };
 }
 
 /** Längenunabhängiger, zeitkonstanter Vergleich über SHA-256-Digests. */
@@ -110,7 +161,9 @@ export async function unlock(password: string): Promise<boolean> {
     return false;
   }
   const session = await useSession<GateSession>(sessionConfig());
-  await session.update({ unlocked: true, admin: istAdmin });
+  const jetzt = Date.now();
+  await session.clear();
+  await session.update({ unlocked: true, admin: istAdmin, begonnen: jetzt, gesehen: jetzt });
   await protokolliere("freischaltung", istAdmin ? "admin" : "team");
   return true;
 }
@@ -123,13 +176,12 @@ export async function lock(): Promise<void> {
 }
 
 export async function isUnlocked(): Promise<boolean> {
-  const session = await useSession<GateSession>(sessionConfig());
-  return session.data.unlocked === true;
+  return (await activeSession()).unlocked === true;
 }
 
 export async function isAdmin(): Promise<boolean> {
-  const session = await useSession<GateSession>(sessionConfig());
-  return session.data.unlocked === true && session.data.admin === true;
+  const daten = await activeSession();
+  return daten.unlocked === true && daten.admin === true;
 }
 
 /** Wirft eine Weiterleitung auf /unlock, bevor geschützte Daten gelesen werden. */
