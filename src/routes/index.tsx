@@ -146,6 +146,10 @@ function Dashboard() {
               className="w-full bg-background sm:w-56"
             />
             <NeuerAuftragDialog onCreate={(a) => void anlegen(a)} />
+            <Button variant="outline" asChild>
+              <Link to="/historie">Änderungshistorie</Link>
+            </Button>
+
             {gate.admin && (
               <>
                 <Button variant="outline" asChild>
