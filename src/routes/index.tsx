@@ -126,23 +126,24 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">
               Gutachtenwesen
             </p>
-            <h1 className="mt-1 text-2xl font-semibold">Gutachten-Cockpit</h1>
+            <h1 className="mt-1 text-xl font-semibold sm:text-2xl">Gutachten-Cockpit</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Fristenüberwachung, Terminstatus und Abrechnungsreife auf einen Blick – geführt
               ausschließlich über Aktenzeichen und pseudonyme Gutachterkürzel.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Input
               value={suche}
               onChange={(e) => setSuche(e.target.value)}
               placeholder="Aktenzeichen, Fach, Kürzel …"
-              className="w-56 bg-background"
+              aria-label="Aufträge durchsuchen"
+              className="w-full bg-background sm:w-56"
             />
             <NeuerAuftragDialog onCreate={(a) => void anlegen(a)} />
             {gate.admin && (
@@ -155,19 +156,23 @@ function Dashboard() {
                 </Button>
               </>
             )}
-            <Button variant="outline" onClick={() => void sperren()}>
+            <Button
+              variant="outline"
+              onClick={() => void sperren()}
+              aria-label="Sitzung sperren und abmelden"
+            >
               Sperren
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl space-y-6 px-6 py-6">
+      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
         <section aria-label="Kennzahlen">
           <KpiPanel kpi={kpi} />
         </section>
 
-        <section className="panel p-5">
+        <section className="panel p-4 sm:p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-display text-lg font-semibold">Fristenübersicht</h2>
             <p className="text-xs text-muted-foreground">
@@ -177,13 +182,15 @@ function Dashboard() {
           </div>
 
           <Tabs defaultValue="alle" className="mt-4">
-            <TabsList>
-              <TabsTrigger value="alle">Alle ({gruppen.alle.length})</TabsTrigger>
-              <TabsTrigger value="rot">Überfällig ({gruppen.rot.length})</TabsTrigger>
-              <TabsTrigger value="gelb">Frist naht ({gruppen.gelb.length})</TabsTrigger>
-              <TabsTrigger value="gruen">Im Plan ({gruppen.gruen.length})</TabsTrigger>
-              <TabsTrigger value="fertig">Abgeschlossen ({gruppen.fertig.length})</TabsTrigger>
-            </TabsList>
+            <div className="-mx-1 overflow-x-auto px-1 pb-1">
+              <TabsList className="w-max">
+                <TabsTrigger value="alle">Alle ({gruppen.alle.length})</TabsTrigger>
+                <TabsTrigger value="rot">Überfällig ({gruppen.rot.length})</TabsTrigger>
+                <TabsTrigger value="gelb">Frist naht ({gruppen.gelb.length})</TabsTrigger>
+                <TabsTrigger value="gruen">Im Plan ({gruppen.gruen.length})</TabsTrigger>
+                <TabsTrigger value="fertig">Abgeschlossen ({gruppen.fertig.length})</TabsTrigger>
+              </TabsList>
+            </div>
             {(["alle", "rot", "gelb", "gruen", "fertig"] as const).map((key) => (
               <TabsContent key={key} value={key} className="mt-4">
                 <AuftragListe auftraege={gruppen[key]} {...handlers} />
@@ -192,9 +199,10 @@ function Dashboard() {
           </Tabs>
         </section>
 
+
         <GutachterPanel auftraege={auftraege} />
 
-        <section className="panel p-5">
+        <section className="panel p-4 sm:p-5">
           <h2 className="font-display text-lg font-semibold">Datenschutz & Zugriff</h2>
           <ul className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
             <li>Zugang nur mit dem gemeinsamen Bearbeitungspasswort – nicht öffentlich sichtbar.</li>

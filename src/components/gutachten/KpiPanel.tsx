@@ -45,7 +45,7 @@ export function KpiPanel({ kpi }: { kpi: Kpi }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {tiles.map((t) => (
         <Card key={t.label} className="panel gap-0 border-0 p-4 shadow-none">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">

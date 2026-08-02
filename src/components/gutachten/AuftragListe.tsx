@@ -50,11 +50,13 @@ export function AuftragListe({
         const rest = tageBis(a.fristAm);
         const hinweis = eskalation(a);
         return (
-          <article key={a.id} className="panel p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
+          <article key={a.id} className="panel p-4" aria-label={`Auftrag ${a.aktenzeichen}`}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="num font-display text-lg font-semibold">{a.aktenzeichen}</h3>
+                  <h3 className="num font-display text-base font-semibold break-all sm:text-lg">
+                    {a.aktenzeichen}
+                  </h3>
                   <StatusPill auftrag={a} />
                   <Badge variant="secondary">{a.auftraggeber}</Badge>
                   <Badge variant="outline">{a.fach}</Badge>
@@ -65,7 +67,7 @@ export function AuftragListe({
                   {wochenSeit(a.auftragEingangAm)} Wochen · Termin {formatDatum(a.terminAm)}
                 </p>
               </div>
-              <div className="text-right">
+              <div className="shrink-0 sm:text-right">
                 <p className="text-xs tracking-wide text-muted-foreground uppercase">Fällig am</p>
                 <p className="num font-display text-lg font-semibold">{formatDatum(a.fristAm)}</p>
                 {a.phase === "Versandt" || a.phase === "Abgerechnet" ? (
@@ -86,6 +88,7 @@ export function AuftragListe({
                 )}
               </div>
             </div>
+
 
 
 
@@ -123,7 +126,10 @@ export function AuftragListe({
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Select value={a.phase} onValueChange={(v) => onPhase(a.id, v as Phase)}>
-                <SelectTrigger className="h-9 w-56">
+                <SelectTrigger
+                  className="h-9 w-full sm:w-56"
+                  aria-label={`Bearbeitungsphase für ${a.aktenzeichen}`}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -134,11 +140,21 @@ export function AuftragListe({
                   ))}
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="outline" onClick={() => onVerlaengerung(a.id)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onVerlaengerung(a.id)}
+                aria-label={`Frist für ${a.aktenzeichen} um 4 Wochen verlängern`}
+              >
                 Fristverlängerung +4 Wochen
               </Button>
               {!a.abrechnungsdatenKomplett && (
-                <Button size="sm" variant="outline" onClick={() => onAbrechnung(a.id)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onAbrechnung(a.id)}
+                  aria-label={`Abrechnungsdaten für ${a.aktenzeichen} als vollständig markieren`}
+                >
                   Abrechnungsdaten vollständig
                 </Button>
               )}
@@ -150,6 +166,7 @@ export function AuftragListe({
                     size="sm"
                     variant="outline"
                     onClick={() => onZusatzEingang(a.id, z.fach)}
+                    aria-label={`Zusatzgutachten ${z.fach} für ${a.aktenzeichen} als eingegangen markieren`}
                   >
                     {z.fach} eingegangen
                   </Button>
@@ -157,12 +174,14 @@ export function AuftragListe({
               <Button
                 size="sm"
                 variant="ghost"
-                className="ml-auto text-muted-foreground"
+                className="text-muted-foreground sm:ml-auto"
                 onClick={() => onDelete(a.id)}
+                aria-label={`Auftrag ${a.aktenzeichen} entfernen`}
               >
                 Entfernen
               </Button>
             </div>
+
           </article>
         );
       })}

@@ -61,16 +61,30 @@ function AdminProtokoll() {
         </p>
 
         <div className="mt-5 overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[42rem] text-left text-sm">
+            <caption className="sr-only">
+              Sicherheitsereignisse mit Zeitpunkt, Ereignis, Rolle, IP-Adresse und Browserkennung
+            </caption>
             <thead className="text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="py-2 pr-4">Zeitpunkt</th>
-                <th className="py-2 pr-4">Ereignis</th>
-                <th className="py-2 pr-4">Rolle</th>
-                <th className="py-2 pr-4">IP</th>
-                <th className="py-2">Browser</th>
+                <th scope="col" className="py-2 pr-4">
+                  Zeitpunkt
+                </th>
+                <th scope="col" className="py-2 pr-4">
+                  Ereignis
+                </th>
+                <th scope="col" className="py-2 pr-4">
+                  Rolle
+                </th>
+                <th scope="col" className="py-2 pr-4">
+                  IP
+                </th>
+                <th scope="col" className="py-2">
+                  Browser
+                </th>
               </tr>
             </thead>
+
             <tbody>
               {eintraege.length === 0 && (
                 <tr>
