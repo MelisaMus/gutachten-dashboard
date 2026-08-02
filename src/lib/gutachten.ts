@@ -64,6 +64,15 @@ export const FACHGEBIETE: Fachgebiet[] = [
   "Sonstiges",
 ];
 
+/** Auswählbare Zusatzgutachten (Psychiatrie und Orthopädie treffen nicht zu) */
+export const ZUSATZ_FACHGEBIETE: Fachgebiet[] = [
+  "Neurologie",
+  "Neuropsychologie",
+  "Neurophysiologie",
+  "EEG",
+];
+
+
 export const AUFTRAGGEBER: Auftraggeber[] = [
   "Gericht",
   "Versicherung",
