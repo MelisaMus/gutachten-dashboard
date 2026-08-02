@@ -202,9 +202,10 @@ function Dashboard() {
             ))}
           </Tabs>
         </section>
-
+        <ProzessPanel auftraege={auftraege} />
 
         <GutachterPanel auftraege={auftraege} />
+
 
         <section className="panel p-4 sm:p-5">
           <h2 className="font-display text-lg font-semibold">Datenschutz & Zugriff</h2>
