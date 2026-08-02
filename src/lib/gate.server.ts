@@ -46,9 +46,13 @@ function sessionConfig() {
     cookie: {
       httpOnly: true,
       secure: true,
-      sameSite: "strict" as const,
+      // Im Live-Betrieb strikt (bester CSRF-Schutz). In der Vorschau läuft die
+      // App in einem fremden Rahmen (iframe); dort würde ein striktes Cookie
+      // nicht mitgesendet und die Sitzung wäre sofort wieder abgemeldet.
+      sameSite: process.env["NODE_ENV"] === "production" ? ("strict" as const) : ("none" as const),
       path: "/",
     },
+
   };
 }
 
