@@ -43,6 +43,14 @@ type Zustand =
   | { art: "erfolg" }
   | { art: "fehler"; text: string };
 
+type ProtokollEintrag = {
+  id: string;
+  ereignis: string;
+  rolle: string | null;
+  ip: string | null;
+  created_at: string;
+};
+
 const ZEIT = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" });
 
 function AdminPasswort() {
@@ -179,7 +187,7 @@ function AdminPasswort() {
             </p>
           ) : (
             <ul className="mt-4 grid gap-2">
-              {eintraege.map((e) => {
+              {(eintraege as ProtokollEintrag[]).map((e) => {
                 const erfolg = e.ereignis === "passwort_geaendert";
                 return (
                   <li
