@@ -2,7 +2,19 @@
 
 ich möchte ein Dashboard erstellen zur Nachverfolgung von Gutachtenaufträgen, aber Vorsicht, es sollen keine personenbezogenen Daten gespeichert werden, trotzdem soll ersichtlich sein, welches Gutachten wann fällig ist. Kernproblem: Die von Ihnen beschriebenen Probleme sind typisch für das medizinische Gutachtenwesen. Das Interessante ist: Der größte Zeitverlust entsteht meist nicht durch das Schreiben des Gutachtens, sondern durch den Prozess davor und danach. Wenn man den gesamten Ablauf betrachtet, gibt es vier wesentliche Engpunkte:
 
-ProzessschrittHauptproblemVerbesserungspotenzialTerminvereinbarungViele Telefonate und E-MailsDigitalisierung und zentrale TerminsteuerungGutachtenerstellungLange Bearbeitungszeiten, FristüberschreitungenFristenmanagement und AnreizeKommunikation mit AuftraggebernFristverlängerungen, RückfragenStandardisierung und AutomatisierungAbrechnungWarten auf vollständige Gutachten und fehlende DatenFrühzeitige Datenerfassung und parallele Prozesse
+Prozessschritt
+Hauptproblem
+Verbesserungspotenzial
+Terminvereinbarung
+Viele Telefonate und E-Mails, Digitalisierung und Terminsteuerung
+Gutachtenerstellung
+Lange Bearbeitungszeiten, Fristüberschreitungen
+Fristenmanagement und Anreize, Kommunikation mit Auftraggebern
+Fristverlängerungen, Rückfragen
+Standardisierung und Automatisierung
+Abrechnung
+Warten auf vollständige Gutachten und fehlende Daten
+Frühzeitige Datenerfassung und parallele Prozesse
 
 1. Terminierung automatisieren
 
