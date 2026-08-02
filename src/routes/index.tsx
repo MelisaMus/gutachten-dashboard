@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { KpiPanel } from "@/components/gutachten/KpiPanel";
 import { AuftragListe } from "@/components/gutachten/AuftragListe";
@@ -6,18 +7,14 @@ import { GutachterPanel } from "@/components/gutachten/GutachterPanel";
 import { NeuerAuftragDialog } from "@/components/gutachten/NeuerAuftragDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import {
-  ampel,
-  berechneKpi,
-  ladeAuftraege,
-  speichereAuftraege,
-  type Auftrag,
-  type Phase,
-} from "@/lib/gutachten";
+import { Button } from "@/components/ui/button";
+import { getAuftraege, addAuftrag, patchAuftrag, removeAuftrag } from "@/lib/auftraege.functions";
+import { lockSite } from "@/lib/gate.functions";
+import { ampel, berechneKpi, type Auftrag, type Phase } from "@/lib/gutachten";
 
 const TITEL = "Gutachten-Cockpit – Fristen & Auftragssteuerung";
 const BESCHREIBUNG =
-  "Dashboard zur Nachverfolgung medizinischer Gutachtenaufträge: Fristen-Ampel, Terminstatus, Zusatzgutachten und Kennzahlen – ohne personenbezogene Daten.";
+  "Interner Arbeitsbereich zur Nachverfolgung medizinischer Gutachtenaufträge: Fristen-Ampel, Terminstatus, Zusatzgutachten und Kennzahlen – ohne personenbezogene Daten.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,27 +23,46 @@ export const Route = createFileRoute("/")({
       { name: "description", content: BESCHREIBUNG },
       { property: "og:title", content: TITEL },
       { property: "og:description", content: BESCHREIBUNG },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
+  loader: () => getAuftraege(),
+  errorComponent: () => (
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <p className="text-sm text-muted-foreground">
+        Die Aufträge konnten nicht geladen werden. Bitte Seite neu laden.
+      </p>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <p className="text-sm text-muted-foreground">Nicht gefunden.</p>
+    </div>
+  ),
   component: Dashboard,
 });
 
 function Dashboard() {
-  const [auftraege, setAuftraege] = useState<Auftrag[]>([]);
+  const router = useRouter();
+  const geladene = Route.useLoaderData();
+  const [auftraege, setAuftraege] = useState<Auftrag[]>(geladene);
   const [suche, setSuche] = useState("");
-  const [geladen, setGeladen] = useState(false);
+
+  const create = useServerFn(addAuftrag);
+  const patch = useServerFn(patchAuftrag);
+  const remove = useServerFn(removeAuftrag);
+  const abmelden = useServerFn(lockSite);
 
   useEffect(() => {
-    setAuftraege(ladeAuftraege());
-    setGeladen(true);
-  }, []);
+    setAuftraege(geladene);
+  }, [geladene]);
 
-  useEffect(() => {
-    if (geladen) speichereAuftraege(auftraege);
-  }, [auftraege, geladen]);
-
-  const update = (id: string, patch: Partial<Auftrag>) =>
-    setAuftraege((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+  const update = (id: string, patchData: Partial<Auftrag>) => {
+    setAuftraege((prev) => prev.map((a) => (a.id === id ? { ...a, ...patchData } : a)));
+    void patch({ data: { id, patch: patchData } });
+  };
 
   const gefiltert = useMemo(() => {
     const q = suche.trim().toLowerCase();
@@ -90,7 +106,21 @@ function Dashboard() {
       });
     },
     onAbrechnung: (id: string) => update(id, { abrechnungsdatenKomplett: true }),
-    onDelete: (id: string) => setAuftraege((prev) => prev.filter((a) => a.id !== id)),
+    onDelete: (id: string) => {
+      setAuftraege((prev) => prev.filter((a) => a.id !== id));
+      void remove({ data: { id } });
+    },
+  };
+
+  const anlegen = async (a: Auftrag) => {
+    const { id: _ignoriert, ...rest } = a;
+    const gespeichert = await create({ data: rest });
+    setAuftraege((prev) => [gespeichert, ...prev]);
+  };
+
+  const sperren = async () => {
+    await abmelden({});
+    await router.navigate({ to: "/unlock", replace: true });
   };
 
   return (
@@ -114,7 +144,10 @@ function Dashboard() {
               placeholder="Aktenzeichen, Fach, Kürzel …"
               className="w-56 bg-background"
             />
-            <NeuerAuftragDialog onCreate={(a) => setAuftraege((prev) => [a, ...prev])} />
+            <NeuerAuftragDialog onCreate={(a) => void anlegen(a)} />
+            <Button variant="outline" onClick={() => void sperren()}>
+              Sperren
+            </Button>
           </div>
         </div>
       </header>
@@ -152,12 +185,12 @@ function Dashboard() {
         <GutachterPanel auftraege={auftraege} />
 
         <section className="panel p-5">
-          <h2 className="font-display text-lg font-semibold">Datenschutz-Prinzip</h2>
+          <h2 className="font-display text-lg font-semibold">Datenschutz & Zugriff</h2>
           <ul className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+            <li>Zugang nur mit dem gemeinsamen Bearbeitungspasswort – nicht öffentlich sichtbar.</li>
             <li>Keine Namen, Geburtsdaten, Adressen oder Diagnosen – nur Aktenzeichen.</li>
             <li>Gutachter erscheinen ausschließlich als pseudonymes Kürzel (z. B. GA-04).</li>
-            <li>Gespeichert werden nur Termine, Fristen, Phase und Prozessmerkmale.</li>
-            <li>Daten liegen lokal im Browser dieses Arbeitsplatzes.</li>
+            <li>Daten liegen zentral in der Cloud, erreichbar nur über geschützte Serverfunktionen.</li>
           </ul>
         </section>
       </main>
