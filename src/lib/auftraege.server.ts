@@ -84,20 +84,28 @@ export async function createAuftrag(input: NeuerAuftrag): Promise<Auftrag> {
   return toAuftrag(data as unknown as Row);
 }
 
-export type AuftragPatch = Partial<Omit<Auftrag, "id">>;
+export type AuftragPatch = { [K in keyof NeuerAuftrag]?: NeuerAuftrag[K] | undefined };
 
 export async function updateAuftrag(id: string, patch: AuftragPatch): Promise<Auftrag> {
   const client = await db();
-  const row: Record<string, unknown> = {};
-  if (patch.phase !== undefined) row["phase"] = patch.phase;
-  if (patch.fristAm !== undefined) row["frist_am"] = patch.fristAm;
-  if (patch.terminAm !== undefined) row["termin_am"] = patch.terminAm;
-  if (patch.zusatz !== undefined) row["zusatz"] = patch.zusatz;
+  const row: {
+    phase?: string;
+    frist_am?: string;
+    termin_am?: string | null;
+    zusatz?: Zusatzgutachten[];
+    fristverlaengerungen?: number;
+    abrechnungsdaten_komplett?: boolean;
+    notiz?: string;
+  } = {};
+  if (patch.phase !== undefined) row.phase = patch.phase;
+  if (patch.fristAm !== undefined) row.frist_am = patch.fristAm;
+  if (patch.terminAm !== undefined) row.termin_am = patch.terminAm;
+  if (patch.zusatz !== undefined) row.zusatz = patch.zusatz;
   if (patch.fristverlaengerungen !== undefined)
-    row["fristverlaengerungen"] = patch.fristverlaengerungen;
+    row.fristverlaengerungen = patch.fristverlaengerungen;
   if (patch.abrechnungsdatenKomplett !== undefined)
-    row["abrechnungsdaten_komplett"] = patch.abrechnungsdatenKomplett;
-  if (patch.notiz !== undefined) row["notiz"] = patch.notiz;
+    row.abrechnungsdaten_komplett = patch.abrechnungsdatenKomplett;
+  if (patch.notiz !== undefined) row.notiz = patch.notiz;
 
   const { data, error } = await client
     .from("auftraege")
