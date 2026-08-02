@@ -179,7 +179,7 @@ export function NeuerAuftragDialog({ onCreate }: { onCreate: (a: Auftrag) => voi
           <div className="grid gap-2">
             <Label>Zusatzgutachten sofort parallel beauftragen</Label>
             <div className="flex flex-wrap gap-3">
-              {FACHGEBIETE.filter((f) => f !== fach && f !== "Sonstiges").map((f) => (
+              {ZUSATZ_FACHGEBIETE.filter((f) => f !== fach).map((f) => (
                 <label key={f} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={zusatz.includes(f)}
