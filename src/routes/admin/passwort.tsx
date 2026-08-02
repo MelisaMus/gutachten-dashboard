@@ -253,7 +253,17 @@ function AdminPasswort() {
           ) : (
             <ul className="mt-4 grid gap-2">
               {(eintraege as ProtokollEintrag[]).map((e) => {
-                const erfolg = e.ereignis === "passwort_geaendert";
+                const erfolg =
+                  e.ereignis === "passwort_geaendert" ||
+                  e.ereignis === "reset_freigabe_eingeloest" ||
+                  e.ereignis === "reset_freigabe_erstellt";
+                const beschriftung: Record<string, string> = {
+                  passwort_geaendert: "Passwort geändert",
+                  passwort_aenderung_fehlgeschlagen: "Änderung fehlgeschlagen",
+                  reset_freigabe_erstellt: "Freigabe erstellt",
+                  reset_freigabe_eingeloest: "Passwort per Freigabe gesetzt",
+                  reset_freigabe_fehlgeschlagen: "Freigabe fehlgeschlagen",
+                };
                 return (
                   <li
                     key={e.id}
@@ -263,7 +273,7 @@ function AdminPasswort() {
                       {ZEIT.format(new Date(e.created_at))}
                     </span>
                     <span className={erfolg ? "text-primary" : "text-destructive"}>
-                      {erfolg ? "erfolgreich geändert" : "fehlgeschlagen"}
+                      {beschriftung[e.ereignis] ?? e.ereignis}
                     </span>
                     <span className="text-muted-foreground">
                       Rolle: {e.rolle ?? "unbekannt"} · IP: {e.ip ?? "unbekannt"}
