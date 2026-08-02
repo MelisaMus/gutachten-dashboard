@@ -50,11 +50,13 @@ export function AuftragListe({
         const rest = tageBis(a.fristAm);
         const hinweis = eskalation(a);
         return (
-          <article key={a.id} className="panel p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
+          <article key={a.id} className="panel p-4" aria-label={`Auftrag ${a.aktenzeichen}`}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="num font-display text-lg font-semibold">{a.aktenzeichen}</h3>
+                  <h3 className="num font-display text-base font-semibold break-all sm:text-lg">
+                    {a.aktenzeichen}
+                  </h3>
                   <StatusPill auftrag={a} />
                   <Badge variant="secondary">{a.auftraggeber}</Badge>
                   <Badge variant="outline">{a.fach}</Badge>
@@ -65,7 +67,7 @@ export function AuftragListe({
                   {wochenSeit(a.auftragEingangAm)} Wochen · Termin {formatDatum(a.terminAm)}
                 </p>
               </div>
-              <div className="text-right">
+              <div className="shrink-0 sm:text-right">
                 <p className="text-xs tracking-wide text-muted-foreground uppercase">Fällig am</p>
                 <p className="num font-display text-lg font-semibold">{formatDatum(a.fristAm)}</p>
                 {a.phase === "Versandt" || a.phase === "Abgerechnet" ? (
@@ -86,6 +88,7 @@ export function AuftragListe({
                 )}
               </div>
             </div>
+
 
 
 
