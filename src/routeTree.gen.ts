@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HistorieRouteImport } from './routes/historie'
 import { Route as PasswortResetRouteImport } from './routes/passwort-reset'
 import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as AdminPasswortRouteImport } from './routes/admin/passwort'
@@ -18,6 +19,11 @@ import { Route as AdminProtokollRouteImport } from './routes/admin/protokoll'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistorieRoute = HistorieRouteImport.update({
+  id: '/historie',
+  path: '/historie',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PasswortResetRoute = PasswortResetRouteImport.update({
@@ -43,6 +49,7 @@ const AdminProtokollRoute = AdminProtokollRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/historie': typeof HistorieRoute
   '/passwort-reset': typeof PasswortResetRoute
   '/unlock': typeof UnlockRoute
   '/admin/passwort': typeof AdminPasswortRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/historie': typeof HistorieRoute
   '/passwort-reset': typeof PasswortResetRoute
   '/unlock': typeof UnlockRoute
   '/admin/passwort': typeof AdminPasswortRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/historie': typeof HistorieRoute
   '/passwort-reset': typeof PasswortResetRoute
   '/unlock': typeof UnlockRoute
   '/admin/passwort': typeof AdminPasswortRoute
@@ -66,13 +75,24 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/passwort-reset' | '/unlock' | '/admin/passwort' | '/admin/protokoll'
+    | '/'
+    | '/historie'
+    | '/passwort-reset'
+    | '/unlock'
+    | '/admin/passwort'
+    | '/admin/protokoll'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/passwort-reset' | '/unlock' | '/admin/passwort' | '/admin/protokoll'
+    | '/'
+    | '/historie'
+    | '/passwort-reset'
+    | '/unlock'
+    | '/admin/passwort'
+    | '/admin/protokoll'
   id:
     | '__root__'
     | '/'
+    | '/historie'
     | '/passwort-reset'
     | '/unlock'
     | '/admin/passwort'
@@ -81,6 +101,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HistorieRoute: typeof HistorieRoute
   PasswortResetRoute: typeof PasswortResetRoute
   UnlockRoute: typeof UnlockRoute
   AdminPasswortRoute: typeof AdminPasswortRoute
@@ -94,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/historie': {
+      id: '/historie'
+      path: '/historie'
+      fullPath: '/historie'
+      preLoaderRoute: typeof HistorieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/passwort-reset': {
@@ -129,6 +157,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HistorieRoute: HistorieRoute,
   PasswortResetRoute: PasswortResetRoute,
   UnlockRoute: UnlockRoute,
   AdminPasswortRoute: AdminPasswortRoute,

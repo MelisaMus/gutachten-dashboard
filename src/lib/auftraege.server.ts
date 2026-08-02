@@ -2,8 +2,14 @@
  * Datenzugriff auf die zentrale Auftragstabelle – ausschließlich serverseitig
  * und nur nach erfolgreichem Passwort-Gate.
  */
-import { requireUnlocked } from "./gate.server";
+import { requireUnlocked, sessionRolle } from "./gate.server";
+import {
+  protokolliereAenderung,
+  protokolliereAnlage,
+  protokolliereLoeschung,
+} from "./historie.server";
 import type { Auftrag, Fachgebiet, Auftraggeber, Phase, Zusatzgutachten } from "./gutachten";
+
 
 type Row = {
   id: string;
@@ -81,7 +87,9 @@ export async function createAuftrag(input: NeuerAuftrag): Promise<Auftrag> {
     .select(SPALTEN)
     .single();
   if (error) throw new Error(error.message);
-  return toAuftrag(data as unknown as Row);
+  const auftrag = toAuftrag(data as unknown as Row);
+  await protokolliereAnlage(auftrag, await sessionRolle());
+  return auftrag;
 }
 
 export type AuftragPatch = { [K in keyof NeuerAuftrag]?: NeuerAuftrag[K] | undefined };
@@ -107,6 +115,14 @@ export async function updateAuftrag(id: string, patch: AuftragPatch): Promise<Au
     row.abrechnungsdaten_komplett = patch.abrechnungsdatenKomplett;
   if (patch.notiz !== undefined) row.notiz = patch.notiz;
 
+  const { data: vorherRow, error: leseFehler } = await client
+    .from("auftraege")
+    .select(SPALTEN)
+    .eq("id", id)
+    .single();
+  if (leseFehler) throw new Error(leseFehler.message);
+  const vorher = toAuftrag(vorherRow as unknown as Row);
+
   const { data, error } = await client
     .from("auftraege")
     .update(row)
@@ -114,11 +130,31 @@ export async function updateAuftrag(id: string, patch: AuftragPatch): Promise<Au
     .select(SPALTEN)
     .single();
   if (error) throw new Error(error.message);
+  await protokolliereAenderung(vorher, patch, await sessionRolle());
   return toAuftrag(data as unknown as Row);
 }
 
 export async function deleteAuftrag(id: string): Promise<void> {
   const client = await db();
+  const { data: vorherRow } = await client.from("auftraege").select(SPALTEN).eq("id", id).single();
   const { error } = await client.from("auftraege").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  if (vorherRow) {
+    await protokolliereLoeschung(toAuftrag(vorherRow as unknown as Row), await sessionRolle());
+  }
 }
+
+/** Historie eines Auftrags – nur nach Freischaltung. */
+export async function historieFuerAuftrag(id: string) {
+  await requireUnlocked();
+  const { leseHistorie } = await import("./historie.server");
+  return leseHistorie(id);
+}
+
+/** Gesamte Änderungshistorie – nur nach Freischaltung. */
+export async function gesamteHistorie(limit = 150) {
+  await requireUnlocked();
+  const { leseGesamtHistorie } = await import("./historie.server");
+  return leseGesamtHistorie(limit);
+}
+

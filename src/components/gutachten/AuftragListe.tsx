@@ -8,6 +8,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusPill } from "./StatusPill";
+import { HistorieDialog } from "./HistorieDialog";
+
 import {
   PHASEN,
   eskalation,
@@ -171,16 +173,20 @@ export function AuftragListe({
                     {z.fach} eingegangen
                   </Button>
                 ))}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-muted-foreground sm:ml-auto"
-                onClick={() => onDelete(a.id)}
-                aria-label={`Auftrag ${a.aktenzeichen} entfernen`}
-              >
-                Entfernen
-              </Button>
+              <div className="flex items-center gap-1 sm:ml-auto">
+                <HistorieDialog id={a.id} aktenzeichen={a.aktenzeichen} />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={() => onDelete(a.id)}
+                  aria-label={`Auftrag ${a.aktenzeichen} entfernen`}
+                >
+                  Entfernen
+                </Button>
+              </div>
             </div>
+
 
           </article>
         );

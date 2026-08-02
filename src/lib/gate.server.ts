@@ -271,6 +271,14 @@ export async function isAdmin(): Promise<boolean> {
   return daten.unlocked === true && daten.admin === true;
 }
 
+/** Rolle der aktiven Sitzung, für Protokolleinträge. */
+export async function sessionRolle(): Promise<"admin" | "team" | null> {
+  const daten = await activeSession();
+  if (daten.unlocked !== true) return null;
+  return daten.admin === true ? "admin" : "team";
+}
+
+
 /** Wirft eine Weiterleitung auf /unlock, bevor geschützte Daten gelesen werden. */
 export async function requireUnlocked(): Promise<void> {
   if (!(await isUnlocked())) throw redirect({ to: "/unlock" });

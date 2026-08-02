@@ -74,3 +74,16 @@ export const removeAuftrag = createServerFn({ method: "POST" })
     await deleteAuftrag(data.id);
     return { ok: true as const };
   });
+
+export const getAuftragHistorie = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const { historieFuerAuftrag } = await import("./auftraege.server");
+    return historieFuerAuftrag(data.id);
+  });
+
+export const getGesamteHistorie = createServerFn({ method: "GET" }).handler(async () => {
+  const { gesamteHistorie } = await import("./auftraege.server");
+  return gesamteHistorie();
+});
+
