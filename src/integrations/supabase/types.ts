@@ -68,6 +68,45 @@ export type Database = {
         }
         Relationships: []
       }
+      auftrag_historie: {
+        Row: {
+          aktenzeichen: string
+          aktion: string
+          auftrag_id: string | null
+          created_at: string
+          feld: string | null
+          id: string
+          ip: string | null
+          rolle: string | null
+          wert_alt: string | null
+          wert_neu: string | null
+        }
+        Insert: {
+          aktenzeichen: string
+          aktion: string
+          auftrag_id?: string | null
+          created_at?: string
+          feld?: string | null
+          id?: string
+          ip?: string | null
+          rolle?: string | null
+          wert_alt?: string | null
+          wert_neu?: string | null
+        }
+        Update: {
+          aktenzeichen?: string
+          aktion?: string
+          auftrag_id?: string | null
+          created_at?: string
+          feld?: string | null
+          id?: string
+          ip?: string | null
+          rolle?: string | null
+          wert_alt?: string | null
+          wert_neu?: string | null
+        }
+        Relationships: []
+      }
       gate_credentials: {
         Row: {
           created_at: string
