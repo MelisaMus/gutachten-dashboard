@@ -138,14 +138,11 @@ export async function protokolliereLoeschung(
       wert_alt: `Phase ${auftrag.phase} · Frist ${auftrag.fristAm}`,
       wert_neu: null,
       rolle,
-      ip: adresseOderNull(auftrag),
+      ip: ip(),
     },
   ]);
 }
 
-function adresseOderNull(_auftrag: Auftrag): string | null {
-  return ip();
-}
 
 /** Historie eines einzelnen Auftrags (neueste zuerst). */
 export async function leseHistorie(auftragId: string, limit = 50): Promise<HistorieEintrag[]> {
