@@ -45,3 +45,10 @@ export const getAuditLog = createServerFn({ method: "GET" }).handler(async () =>
   const { leseProtokoll } = await import("./audit.server");
   return { eintraege: await leseProtokoll(100) };
 });
+
+export const getPasswordChangeHistory = createServerFn({ method: "GET" }).handler(async () => {
+  const { requireAdmin } = await import("./gate.server");
+  await requireAdmin();
+  const { lesePasswortHistorie } = await import("./audit.server");
+  return { eintraege: await lesePasswortHistorie(20) };
+});
