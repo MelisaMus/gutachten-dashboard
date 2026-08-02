@@ -22,6 +22,7 @@ import {
 import {
   AUFTRAGGEBER,
   FACHGEBIETE,
+  ZUSATZ_FACHGEBIETE,
   neueId,
   standardfrist,
   type Auftrag,
