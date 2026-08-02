@@ -1,234 +1,209 @@
-# Gutachten Flow
+# Gutachten-Cockpit
+
+Internes Dashboard zur Nachverfolgung medizinischer Gutachtenaufträge – mit Fristen-Ampel,
+Prozess-KPIs, Zugriffsschutz und vollständiger Änderungshistorie.
+
+**Datenschutz-Grundsatz:** Es werden **keine personenbezogenen Daten** gespeichert. Aufträge
+werden ausschließlich über Aktenzeichen identifiziert, Gutachtende über pseudonyme Kürzel
+(z. B. `GA-04`). Keine Namen, Adressen, Geburtsdaten oder Diagnosen.
+
+- Live: https://gutachten-dashboard.lovable.app
+- Editor: https://lovable.dev/projects/9b4987bc-9478-47c8-ab7b-92b6f49c30a5
+
+---
+
+## 1. Technologie-Stack
+
+| Bereich | Technologie |
+| --- | --- |
+| Framework | TanStack Start v1 (React 19, SSR, File-based Routing) |
+| Build | Vite 7 |
+| Styling | Tailwind CSS v4 (Design-Tokens in `src/styles.css`), shadcn/ui + Radix |
+| Datenhaltung | Lovable Cloud (Postgres, Zugriff nur über `service_role`) |
+| Validierung | Zod |
+| Tests | Vitest |
+| Laufzeit Backend | Serverless Worker (Cloudflare-kompatibel) |
+
+Backend-Logik läuft ausschließlich über `createServerFn` (typisiertes RPC). Es gibt keine
+Edge Functions und keinen direkten Datenbankzugriff aus dem Browser.
+
+## 2. Projektstruktur
+
+```text
+src/
+  routes/
+    __root.tsx              App-Shell, Head-Metadaten, Toaster
+    index.tsx               Cockpit (Liste, KPIs, Filter, Suche)
+    unlock.tsx              Passwort-Gate (Einstieg)
+    historie.tsx            Gesamte Änderungshistorie
+    passwort-reset.tsx      Einlösen einer Reset-Freigabe (Token-Link)
+    admin/passwort.tsx      Team-Passwort ändern + Passwort-Historie
+    admin/protokoll.tsx     Zugriffsprotokoll (Audit-Log)
+  components/gutachten/
+    StatusPill.tsx          Ampel (Farbe + Glyphe + ARIA-Label)
+    KpiPanel.tsx            Kennzahlen-Kacheln
+    ProzessPanel.tsx        Durchlaufzeiten, WIP, Engpass-Status je Schritt
+    AuftragListe.tsx        Auftragstabelle / Karten (mobil)
+    NeuerAuftragDialog.tsx  Anlage inkl. Zusatzgutachten
+    GutachterPanel.tsx      Auswertung je Gutachterkürzel
+    HistorieDialog.tsx      Änderungshistorie je Auftrag
+  lib/
+    gutachten.ts            Fachlogik: Typen, Ampel, Eskalation, KPIs (rein, testbar)
+    gutachten.test.ts       Vitest-Suite der Fachlogik
+    auftraege.functions.ts  Server-RPC für CRUD + Historie
+    auftraege.server.ts     DB-Zugriff, Diffing, Protokollierung
+    gate.functions.ts       Server-RPC für Login/Logout/Admin/Reset
+    gate.server.ts          Passwort-Gate, Session, PBKDF2, Fehlversuchsbremse
+    audit.server.ts         Zugriffsprotokoll, IP-Ermittlung
+    historie.ts/.server.ts  Änderungshistorie (Typen + Schreiben/Lesen)
+```
+
+Konvention: `*.functions.ts` sind dünne, client-importierbare RPC-Wrapper;
+`*.server.ts` enthält die serverseitige Implementierung und wird nur dynamisch
+innerhalb der Handler importiert.
+
+## 3. Datenmodell
+
+### Tabellen (Lovable Cloud / Postgres)
 
-ich möchte ein Dashboard erstellen zur Nachverfolgung von Gutachtenaufträgen, aber Vorsicht, es sollen keine personenbezogenen Daten gespeichert werden, trotzdem soll ersichtlich sein, welches Gutachten wann fällig ist. Kernproblem: Die von Ihnen beschriebenen Probleme sind typisch für das medizinische Gutachtenwesen. Das Interessante ist: Der größte Zeitverlust entsteht meist nicht durch das Schreiben des Gutachtens, sondern durch den Prozess davor und danach. Wenn man den gesamten Ablauf betrachtet, gibt es vier wesentliche Engpunkte:
+| Tabelle | Zweck |
+| --- | --- |
+| `auftraege` | Gutachtenaufträge (Aktenzeichen, Fachgebiet, Phase, Fristen, Zusatzgutachten als JSONB) |
+| `auftrag_historie` | Feldgenaue Änderungshistorie (Aktion, Feld, alt/neu, Rolle, IP) |
+| `zugriff_protokoll` | Audit-Log (Freischaltung, Sperrung, Fehlversuche, Passwortänderungen) |
+| `gate_credentials` | Team-Passwort als PBKDF2-Hash (+ Salt, Iterationen) |
+| `gate_reset_tokens` | Einmalige, zeitlich begrenzte Reset-Freigaben (SHA-256-Hash) |
 
-Prozessschritt
-Hauptproblem
-Verbesserungspotenzial
-Terminvereinbarung
-Viele Telefonate und E-Mails, Digitalisierung und Terminsteuerung
-Gutachtenerstellung
-Lange Bearbeitungszeiten, Fristüberschreitungen
-Fristenmanagement und Anreize, Kommunikation mit Auftraggebern
-Fristverlängerungen, Rückfragen
-Standardisierung und Automatisierung
-Abrechnung
-Warten auf vollständige Gutachten und fehlende Daten
-Frühzeitige Datenerfassung und parallele Prozesse
+Alle Tabellen haben **RLS aktiviert und keine Policies**; Rechte existieren nur für
+`service_role`. Damit ist über die öffentliche Data-API kein Zugriff möglich – jeder Lesevorgang
+läuft über eine gegatete Serverfunktion.
 
-1. Terminierung automatisieren
+### Fachliche Typen (`src/lib/gutachten.ts`)
 
+- `Phase`: Prozessschritte von Auftragseingang bis Abgerechnet
+- `Fachgebiet` / `FACHGEBIETE` (Hauptgutachten) und `ZUSATZ_FACHGEBIETE`
+  (Zusatzgutachten, u. a. Neurophysiologie und EEG; ohne Psychiatrie/Orthopädie)
+- `Auftraggeber`: Gericht, Versicherung, Berufsgenossenschaft, Sonstige
+- `Zusatzgutachten`: parallel beauftragte Teilgutachten mit eigenem Status
 
-2. Klare Bearbeitungsfristen mit Transparenz
+## 4. Fachlogik
 
-Viele Gutachter priorisieren klinische Arbeit verständlicherweise höher als Gutachten.
+### Fristen-Ampel
 
-Deshalb helfen häufig keine Erinnerungen, sondern Transparenz.
+Standardfrist: **8 Wochen** ab Auftragseingang (`standardfrist()`).
 
-Beispielsweise:
+| Ampel | Bedingung |
+| --- | --- |
+| `gruen` | < 6 Wochen |
+| `gelb` | 6–8 Wochen |
+| `rot` | > 8 Wochen |
+| `fertig` | Gutachten versandt / abgerechnet |
 
-Standardfrist 8 Wochen
+Eskalationsstufen (`eskalation()`): 6 Wochen automatische Erinnerung, 8 Wochen persönliche
+Erinnerung, 10 Wochen Eskalation an den Auftraggeber.
 
-nach 6 Wochen automatische Erinnerung
+Barrierefreiheit: Die Ampel wird zusätzlich über Glyphen (●▲■✓) und `aria-label` vermittelt,
+nicht nur über Farbe.
 
-nach 8 Wochen persönliche Erinnerung
+### Kennzahlen
 
-nach 10 Wochen Eskalation
+- `berechneKpi()`: offene Aufträge, Überfälligkeiten, fehlende Termine, offene
+  Zusatzgutachten, Abrechnungsblocker
+- `prozessKpi()`: Median- und P90-Durchlaufzeit, Quote über Standardfrist sowie je
+  Prozessschritt WIP-Menge/-Anteil, Überfälligkeiten, Laufzeit ø/max
+- `gutachterStatistik()`: durchschnittliche Bearbeitungsdauer und Fristtreue je Kürzel
 
-Ein Dashboard könnte anzeigen:
+Engpass-Bewertung je Schritt (`EngpassStatus`): `engpass` bei ≥ 2 überfälligen Aufträgen,
+Laufzeit > 8 Wochen oder WIP-Anteil ≥ 40 % der offenen Aufträge; dazwischen `beobachten`.
 
-Grün (<6 Wochen)
+## 5. Sicherheitsarchitektur
 
-Gelb (6–8 Wochen)
+### Zwei-Ebenen-Passwort
 
-Rot (>8 Wochen)
+| Ebene | Speicherort | Änderbar |
+| --- | --- | --- |
+| Admin | Server-Secret `SITE_PASSWORD` | nur über Secret-Verwaltung |
+| Team | PBKDF2-SHA-256-Hash (210 000 Iterationen) in `gate_credentials` | unter `/admin/passwort` |
 
-Viele Institute berichten, dass allein die Sichtbarkeit der Fristen die Einhaltung verbessert.
+Vergleiche laufen zeitkonstant über SHA-256-Digests (`timingSafeEqual`). Solange kein
+Team-Hash gesetzt ist, gilt das Admin-Passwort auch für das Team.
 
-3. Anreize statt ausschließlich Mahnungen
+### Session
 
-Man kann überlegen, Gutachter unterschiedlich zu incentivieren.
+Verschlüsseltes Session-Cookie (`SESSION_SECRET`) mit `httpOnly`, `secure`,
+`SameSite=Strict`. Sliding Expiration mit rollenabhängigen Grenzen:
 
-Beispielsweise
+| Rolle | Inaktivität | Absolut |
+| --- | --- | --- |
+| admin | 15 Min | 2 h |
+| team | 60 Min | 8 h |
 
-Priorisierte Gutachtenvergabe
+Geschützte Routen rufen `requireUnlocked()` bzw. `requireAdmin()` serverseitig auf und leiten
+sonst auf `/unlock` bzw. `/` um.
 
-Wer zuverlässig arbeitet,
+### Fehlversuchsbremse
 
-bekommt bevorzugt neue Gutachten.
+5 Fehlversuche derselben IP innerhalb von 15 Minuten sperren Anmeldung und Reset-Link
+befristet. Der Zustand wird aus dem Zugriffsprotokoll abgeleitet (zustandslose Worker),
+Ereignisse: `ip_gesperrt`, `ip_abgewiesen`.
 
-Wer regelmäßig 4–6 Monate benötigt,
+### Passwort-Reset-Freigabe
 
-erhält entsprechend weniger Aufträge.
+Admins erzeugen einen 32-Byte-Hex-Token (nur als SHA-256-Hash gespeichert), gültig 30 Minuten
+und einmalig einlösbar unter `/passwort-reset`. Damit wird ausschließlich das Team-Passwort
+gesetzt; `SITE_PASSWORD` bleibt unverändert.
 
-Vergütungsmodell
+### Protokollierung
 
-Wenn möglich:
+- `zugriff_protokoll`: Freischaltung, Sperrung, Fehlversuche, Passwortänderungen,
+  Reset-Freigaben – mit Zeitstempel, Rolle, IP, User-Agent (Ansicht `/admin/protokoll`)
+- `auftrag_historie`: Anlage, Änderung (feldgenaues Diffing), Löschung – Ansicht je Auftrag
+  über den Historie-Dialog und gesamt unter `/historie`
 
-Bonus bei Einhaltung der Frist
+## 6. Konfiguration
 
+Server-Secrets (nicht im Repository, nur in der Laufzeitumgebung):
 
+| Name | Zweck |
+| --- | --- |
+| `SITE_PASSWORD` | Admin-Passwort des Zugangs-Gates |
+| `SESSION_SECRET` | Schlüssel für das verschlüsselte Session-Cookie |
 
-Feedback
+Datenbank-Zugangsdaten werden von Lovable Cloud automatisch bereitgestellt
+(`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` u. a., ausschließlich serverseitig lesbar).
 
-Jährliche Auswertung:
+## 7. Entwicklung
 
-durchschnittliche Bearbeitungsdauer
-
-Fristeinhaltung
-
-Anzahl notwendiger Verlängerungen
-
-Viele Gutachter wissen gar nicht, wie sie im Vergleich abschneiden.
-
-4. Schreibprozess beschleunigen
-
-Viele neurologische Gutachten bestehen aus ähnlichen Bausteinen.
-
-Hilfreich wären:
-
-strukturierte Vorlagen
-
-Textbausteine
-
-Diktat mit KI-Transkription
-
-KI-gestützte Erstellung einer Rohfassung aus Anamnese und Untersuchung
-
-Der Gutachter ergänzt dann nur noch die medizinische Bewertung.
-
-Das kann die Schreibzeit erheblich verkürzen.
-
-5. Fristverlängerungen standardisieren
-
-Aktuell wird vermutlich jede Verlängerung individuell formuliert.
-
-Stattdessen:
-
-automatische Erinnerung an Gutachter
-
-wenn keine Rückmeldung erfolgt:
-
-Standardbrief an Gericht
-
-Standardbrief an Versicherung
-
-Standardbrief an Berufsgenossenschaft
-
-Nur Datum und Aktenzeichen werden automatisch eingefügt.
-
-Das spart viele administrative Stunden.
-
-6. Zusatzgutachten parallel organisieren
-
-Oft wartet das Hauptgutachten auf Zusatzgutachten.
-
-Man könnte bereits bei Auftragseingang prüfen:
-
-Wird ein neuropsychologisches Gutachten benötigt?
-
-
-Dann werden alle Zusatzgutachten gleichzeitig beauftragt.
-
-
-
-7. Abrechnung vorbereiten
-
-Ein häufiger Zeitverlust entsteht, weil am Ende Bankdaten fehlen.
-
-Deshalb bereits beim Auftrag:
-
-✓ vollständige Rechnungsadresse
-
-✓ Steuernummer
-
-✓ Bankverbindung
-
-
-Dann kann nach Eingang des letzten Gutachtens unmittelbar fakturiert werden.
-
-8. Kennzahlen einführen
-
-Viele Prozesse werden erst besser, wenn sie messbar sind.
-
-Zum Beispiel monatlich:
-
-Zeit Auftrag → Termin
-
-Zeit Termin → Gutachten
-
-Zeit Gutachten → Rechnung
-
-Zeit Rechnung → Zahlung
-
-Außerdem:
-
-durchschnittliche Bearbeitungsdauer je Gutachter
-
-Anzahl Fristverlängerungen
-
-Anzahl Mahnungen
-
-Anzahl Rückfragen
-
-Erst dann wird sichtbar, wo tatsächlich der größte Flaschenhals liegt.
-
-Ein möglicher Zielprozess
-
-Auftragseingang
-
-Vollständigkeitsprüfung (inkl. Bankdaten)
-
-Sofortige Terminbuchung aus festen Gutachter-Slots
-
-Gleichzeitige Beauftragung aller Zusatzgutachten
-
-Automatische Fristenüberwachung
-
-KI-/Vorlagen-gestützte Gutachtenerstellung
-
-Automatisierte Erinnerung vor Fristablauf
-
-Standardisierte Fristverlängerung nur bei Bedarf
-
-Sofortige Rechnungsstellung nach Eingang aller Gutachten
-
-
-
-Der größte Hebel
-
-Maßnahmen nach erwarteter Wirkung priorisieren:
-
-Verbindliche Gutachter-Slots mit digitaler Terminplanung – reduziert den Koordinationsaufwand erheblich.
-
-Konsequentes Fristenmanagement mit Transparenz und Feedback für Gutachter – verkürzt die Bearbeitungszeit.
-
-Standardisierte Vorlagen und KI-gestützte Rohentwürfe – beschleunigen das Schreiben der Gutachten.
-
-Parallele Organisation von Haupt- und Zusatzgutachten – verhindert unnötige Wartezeiten.
-
-Vollständige Abrechnungsdaten bereits bei Auftragseingang – verkürzt die Zeit bis zur Zahlung.
-
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://gutachten-dashboard.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9b4987bc-9478-47c8-ab7b-92b6f49c30a5).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Voraussetzung: Node.js (Installation z. B. über [nvm](https://github.com/nvm-sh/nvm)).
 
 ```sh
-git clone <this-repository-url>
+git clone <repository-url>
 cd <repository-name>
 npm i
 npm run dev
 ```
+
+| Skript | Zweck |
+| --- | --- |
+| `npm run dev` | Entwicklungsserver |
+| `npm run build` | Produktionsbuild |
+| `npm run test` | Vitest-Suite der Fachlogik |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+
+Ohne gesetzte Secrets und Datenbankverbindung ist die Anwendung lokal nicht anmeldbar; die
+Fachlogik in `src/lib/gutachten.ts` ist jedoch vollständig ohne Backend testbar.
+
+## 8. Konventionen und Grenzen
+
+- Keine personenbezogenen Daten – neue Felder müssen pseudonym bleiben.
+- Kein Datenzugriff aus dem Browser: jede Lese-/Schreiboperation über `createServerFn`.
+- `*.server.ts` niemals direkt in Komponenten importieren, nur dynamisch im Handler.
+- Oberflächensprache durchgängig Deutsch.
+- Bekannte Einschränkungen: ein gemeinsames Team-Passwort (keine Einzelkonten), kein
+  E-Mail-Alarmkanal (erfordert eigene Absenderdomain), kein CSV-Export.
+
+## 9. Deployment
+
+Die Anwendung wird über Lovable veröffentlicht; jede Änderung im Editor wird in dieses
+Repository committet, Pushes auf `main` fließen zurück in Lovable.
