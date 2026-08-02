@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UnlockRouteImport } from './routes/unlock'
+import { Route as AdminPasswortRouteImport } from './routes/admin/passwort'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const UnlockRoute = UnlockRouteImport.update({
   path: '/unlock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPasswortRoute = AdminPasswortRouteImport.update({
+  id: '/admin/passwort',
+  path: '/admin/passwort',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/unlock': typeof UnlockRoute
+  '/admin/passwort': typeof AdminPasswortRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/unlock': typeof UnlockRoute
+  '/admin/passwort': typeof AdminPasswortRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/unlock': typeof UnlockRoute
+  '/admin/passwort': typeof AdminPasswortRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/unlock'
+  fullPaths: '/' | '/unlock' | '/admin/passwort'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/unlock'
-  id: '__root__' | '/' | '/unlock'
+  to: '/' | '/unlock' | '/admin/passwort'
+  id: '__root__' | '/' | '/unlock' | '/admin/passwort'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   UnlockRoute: typeof UnlockRoute
+  AdminPasswortRoute: typeof AdminPasswortRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnlockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/passwort': {
+      id: '/admin/passwort'
+      path: '/admin/passwort'
+      fullPath: '/admin/passwort'
+      preLoaderRoute: typeof AdminPasswortRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   UnlockRoute: UnlockRoute,
+  AdminPasswortRoute: AdminPasswortRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
