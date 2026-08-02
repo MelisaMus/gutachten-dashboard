@@ -46,7 +46,7 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const router = useRouter();
-  const geladene = Route.useLoaderData();
+  const { auftraege: geladene, gate } = Route.useLoaderData();
   const [auftraege, setAuftraege] = useState<Auftrag[]>(geladene);
   const [suche, setSuche] = useState("");
 
