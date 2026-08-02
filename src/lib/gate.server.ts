@@ -15,7 +15,7 @@
 import { useSession } from "@tanstack/react-start/server";
 import { redirect } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { protokolliere } from "./audit.server";
+import { aktuelleIp, ereignisseDerIp, protokolliere } from "./audit.server";
 
 export type GateSession = {
   unlocked?: boolean;
