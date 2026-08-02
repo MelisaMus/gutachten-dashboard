@@ -30,7 +30,7 @@ function passwordMatches(input: string, expected: string): boolean {
 export async function unlock(password: string): Promise<boolean> {
   const expected = process.env["SITE_PASSWORD"];
   if (!expected) throw new Error("SITE_PASSWORD ist nicht konfiguriert");
-  if (!passwordMatches(password, expected)) return false;
+  if (!passwordMatches(password.trim(), expected.trim())) return false;
   const session = await useSession<GateSession>(sessionConfig());
   await session.update({ unlocked: true });
   return true;
