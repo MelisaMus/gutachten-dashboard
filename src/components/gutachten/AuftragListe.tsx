@@ -84,6 +84,10 @@ export function AuftragListe({
                     {rest < 0 ? `${Math.abs(rest)} Tage überfällig` : `in ${rest} Tagen`}
                   </p>
                 )}
+              </div>
+            </div>
+
+
 
             {(hinweis || !a.abrechnungsdatenKomplett || a.zusatz.some((z) => !z.eingegangen)) && (
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
