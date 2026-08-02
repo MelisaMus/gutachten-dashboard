@@ -15,6 +15,7 @@
 import { useSession } from "@tanstack/react-start/server";
 import { redirect } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "node:crypto";
+import { protokolliere } from "./audit.server";
 
 export type GateSession = { unlocked?: boolean; admin?: boolean };
 
@@ -104,15 +105,21 @@ async function teamPasswordMatches(password: string): Promise<boolean> {
 export async function unlock(password: string): Promise<boolean> {
   const eingabe = password.trim();
   const istAdmin = constantTimeEquals(eingabe, adminPassword());
-  if (!istAdmin && !(await teamPasswordMatches(eingabe))) return false;
+  if (!istAdmin && !(await teamPasswordMatches(eingabe))) {
+    await protokolliere("freischaltung_fehlgeschlagen");
+    return false;
+  }
   const session = await useSession<GateSession>(sessionConfig());
   await session.update({ unlocked: true, admin: istAdmin });
+  await protokolliere("freischaltung", istAdmin ? "admin" : "team");
   return true;
 }
 
 export async function lock(): Promise<void> {
   const session = await useSession<GateSession>(sessionConfig());
+  const rolle = session.data.admin === true ? "admin" : "team";
   await session.clear();
+  await protokolliere("sperrung", rolle);
 }
 
 export async function isUnlocked(): Promise<boolean> {
@@ -146,12 +153,17 @@ export async function changeTeamPassword(
 ): Promise<{ ok: true } | { ok: false; grund: "admin" | "policy" }> {
   await requireAdmin();
   if (!constantTimeEquals(adminEingabe.trim(), adminPassword())) {
+    await protokolliere("passwort_aenderung_fehlgeschlagen", "admin");
     return { ok: false, grund: "admin" };
   }
   const neu = neuesPasswort.trim();
   const stark =
     neu.length >= 12 && /[A-Za-z]/.test(neu) && /[0-9]/.test(neu) && /[^A-Za-z0-9]/.test(neu);
-  if (!stark || constantTimeEquals(neu, adminPassword())) return { ok: false, grund: "policy" };
+  if (!stark || constantTimeEquals(neu, adminPassword())) {
+    await protokolliere("passwort_aenderung_fehlgeschlagen", "admin");
+    return { ok: false, grund: "policy" };
+  }
   await storeCredential(neu);
+  await protokolliere("passwort_geaendert", "admin");
   return { ok: true };
 }

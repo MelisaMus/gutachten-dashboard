@@ -95,6 +95,33 @@ export type Database = {
         }
         Relationships: []
       }
+      zugriff_protokoll: {
+        Row: {
+          created_at: string
+          ereignis: string
+          id: string
+          ip: string | null
+          rolle: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          ereignis: string
+          id?: string
+          ip?: string | null
+          rolle?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          ereignis?: string
+          id?: string
+          ip?: string | null
+          rolle?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -38,3 +38,10 @@ export const changeSitePassword = createServerFn({ method: "POST" })
     const { changeTeamPassword } = await import("./gate.server");
     return changeTeamPassword(data.adminPasswort, data.neuesPasswort);
   });
+
+export const getAuditLog = createServerFn({ method: "GET" }).handler(async () => {
+  const { requireAdmin } = await import("./gate.server");
+  await requireAdmin();
+  const { leseProtokoll } = await import("./audit.server");
+  return { eintraege: await leseProtokoll(100) };
+});

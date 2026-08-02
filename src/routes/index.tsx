@@ -146,9 +146,14 @@ function Dashboard() {
             />
             <NeuerAuftragDialog onCreate={(a) => void anlegen(a)} />
             {gate.admin && (
-              <Button variant="outline" asChild>
-                <Link to="/admin/passwort">Passwort ändern</Link>
-              </Button>
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/admin/passwort">Passwort ändern</Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link to="/admin/protokoll">Protokoll</Link>
+                </Button>
+              </>
             )}
             <Button variant="outline" onClick={() => void sperren()}>
               Sperren
