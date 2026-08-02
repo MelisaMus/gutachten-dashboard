@@ -60,3 +60,16 @@ export async function leseProtokoll(limit = 100): Promise<AuditEintrag[]> {
   if (error) throw new Error(error.message);
   return (data ?? []) as AuditEintrag[];
 }
+
+/** Liest nur die Passwortänderungs-Ereignisse (Erfolg und Misserfolg). */
+export async function lesePasswortHistorie(limit = 20): Promise<AuditEintrag[]> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("zugriff_protokoll")
+    .select("id, ereignis, rolle, ip, user_agent, created_at")
+    .in("ereignis", ["passwort_geaendert", "passwort_aenderung_fehlgeschlagen"])
+    .order("created_at", { ascending: false })
+    .limit(Math.min(Math.max(limit, 1), 100));
+  if (error) throw new Error(error.message);
+  return (data ?? []) as AuditEintrag[];
+}

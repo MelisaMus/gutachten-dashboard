@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { changeSitePassword, requireAdminSession } from "@/lib/gate.functions";
+import { changeSitePassword, getPasswordChangeHistory } from "@/lib/gate.functions";
 
 const TITEL = "Admin – Passwort ändern | Gutachten-Cockpit";
 const BESCHREIBUNG =
   "Interner Admin-Bereich zur Änderung des gemeinsamen Bearbeitungspassworts im Gutachten-Cockpit.";
 
 export const Route = createFileRoute("/admin/passwort")({
-  loader: () => requireAdminSession(),
+  loader: () => getPasswordChangeHistory(),
   head: () => ({
     meta: [
       { title: TITEL },
@@ -24,6 +24,18 @@ export const Route = createFileRoute("/admin/passwort")({
     ],
   }),
   component: AdminPasswort,
+  errorComponent: () => (
+    <div className="min-h-screen bg-background px-6 py-10">
+      <p role="alert" className="mx-auto max-w-lg text-sm text-destructive">
+        Kein Zugriff – bitte als Admin anmelden.
+      </p>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="min-h-screen bg-background px-6 py-10">
+      <p className="mx-auto max-w-lg text-sm text-muted-foreground">Seite nicht gefunden.</p>
+    </div>
+  ),
 });
 
 type Zustand =
@@ -31,8 +43,19 @@ type Zustand =
   | { art: "erfolg" }
   | { art: "fehler"; text: string };
 
+type ProtokollEintrag = {
+  id: string;
+  ereignis: string;
+  rolle: string | null;
+  ip: string | null;
+  created_at: string;
+};
+
+const ZEIT = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" });
+
 function AdminPasswort() {
   const router = useRouter();
+  const { eintraege } = Route.useLoaderData();
   const aendern = useServerFn(changeSitePassword);
   const [adminPasswort, setAdminPasswort] = useState("");
   const [neu, setNeu] = useState("");
@@ -59,6 +82,7 @@ function AdminPasswort() {
     setLaeuft(true);
     try {
       const res = await aendern({ data: { adminPasswort, neuesPasswort: neu } });
+      await router.invalidate();
       if (res.ok) {
         setZustand({ art: "erfolg" });
         setAdminPasswort("");
@@ -151,6 +175,40 @@ function AdminPasswort() {
             </Button>
           </div>
         </form>
+
+        <section className="mt-8 border-t border-border pt-6">
+          <h2 className="font-display text-base font-semibold">Änderungsprotokoll</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Letzte Passwortänderungen mit Zeitpunkt, Rolle, Ergebnis und IP-Adresse.
+          </p>
+          {eintraege.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Bisher keine Passwortänderung protokolliert.
+            </p>
+          ) : (
+            <ul className="mt-4 grid gap-2">
+              {(eintraege as ProtokollEintrag[]).map((e) => {
+                const erfolg = e.ereignis === "passwort_geaendert";
+                return (
+                  <li
+                    key={e.id}
+                    className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-md border border-border px-3 py-2 text-sm"
+                  >
+                    <span className="font-medium tabular-nums">
+                      {ZEIT.format(new Date(e.created_at))}
+                    </span>
+                    <span className={erfolg ? "text-primary" : "text-destructive"}>
+                      {erfolg ? "erfolgreich geändert" : "fehlgeschlagen"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      Rolle: {e.rolle ?? "unbekannt"} · IP: {e.ip ?? "unbekannt"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );
