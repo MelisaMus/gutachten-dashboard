@@ -8,6 +8,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusPill } from "./StatusPill";
+import { HistorieDialog } from "./HistorieDialog";
+
 import {
   PHASEN,
   eskalation,
