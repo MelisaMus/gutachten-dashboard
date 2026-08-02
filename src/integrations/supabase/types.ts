@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      auftraege: {
+        Row: {
+          abrechnungsdaten_komplett: boolean
+          aktenzeichen: string
+          auftrag_eingang_am: string
+          auftraggeber: string
+          created_at: string
+          fach: string
+          frist_am: string
+          fristverlaengerungen: number
+          gutachter_kuerzel: string
+          id: string
+          notiz: string
+          phase: string
+          termin_am: string | null
+          updated_at: string
+          zusatz: Json
+        }
+        Insert: {
+          abrechnungsdaten_komplett?: boolean
+          aktenzeichen: string
+          auftrag_eingang_am: string
+          auftraggeber: string
+          created_at?: string
+          fach: string
+          frist_am: string
+          fristverlaengerungen?: number
+          gutachter_kuerzel: string
+          id?: string
+          notiz?: string
+          phase?: string
+          termin_am?: string | null
+          updated_at?: string
+          zusatz?: Json
+        }
+        Update: {
+          abrechnungsdaten_komplett?: boolean
+          aktenzeichen?: string
+          auftrag_eingang_am?: string
+          auftraggeber?: string
+          created_at?: string
+          fach?: string
+          frist_am?: string
+          fristverlaengerungen?: number
+          gutachter_kuerzel?: string
+          id?: string
+          notiz?: string
+          phase?: string
+          termin_am?: string | null
+          updated_at?: string
+          zusatz?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
