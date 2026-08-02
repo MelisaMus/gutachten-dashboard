@@ -68,16 +68,22 @@ export function AuftragListe({
               <div className="text-right">
                 <p className="text-xs tracking-wide text-muted-foreground uppercase">Fällig am</p>
                 <p className="num font-display text-lg font-semibold">{formatDatum(a.fristAm)}</p>
-                <p
-                  className={cn(
-                    "num text-xs font-medium",
-                    rest < 0 ? "text-status-late" : rest <= 14 ? "text-status-warn" : "text-muted-foreground",
-                  )}
-                >
-                  {rest < 0 ? `${Math.abs(rest)} Tage überfällig` : `in ${rest} Tagen`}
-                </p>
-              </div>
-            </div>
+                {a.phase === "Versandt" || a.phase === "Abgerechnet" ? (
+                  <p className="text-xs font-medium text-muted-foreground">Frist erledigt</p>
+                ) : (
+                  <p
+                    className={cn(
+                      "num text-xs font-medium",
+                      rest < 0
+                        ? "text-status-late"
+                        : rest <= 14
+                          ? "text-status-warn"
+                          : "text-muted-foreground",
+                    )}
+                  >
+                    {rest < 0 ? `${Math.abs(rest)} Tage überfällig` : `in ${rest} Tagen`}
+                  </p>
+                )}
 
             {(hinweis || !a.abrechnungsdatenKomplett || a.zusatz.some((z) => !z.eingegangen)) && (
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
