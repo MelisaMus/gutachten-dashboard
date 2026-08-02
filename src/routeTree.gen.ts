@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as AdminPasswortRouteImport } from './routes/admin/passwort'
+import { Route as AdminProtokollRouteImport } from './routes/admin/protokoll'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const AdminPasswortRoute = AdminPasswortRouteImport.update({
   path: '/admin/passwort',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProtokollRoute = AdminProtokollRouteImport.update({
+  id: '/admin/protokoll',
+  path: '/admin/protokoll',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/unlock': typeof UnlockRoute
   '/admin/passwort': typeof AdminPasswortRoute
+  '/admin/protokoll': typeof AdminProtokollRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/unlock': typeof UnlockRoute
   '/admin/passwort': typeof AdminPasswortRoute
+  '/admin/protokoll': typeof AdminProtokollRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/unlock': typeof UnlockRoute
   '/admin/passwort': typeof AdminPasswortRoute
+  '/admin/protokoll': typeof AdminProtokollRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/unlock' | '/admin/passwort'
+  fullPaths: '/' | '/unlock' | '/admin/passwort' | '/admin/protokoll'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/unlock' | '/admin/passwort'
-  id: '__root__' | '/' | '/unlock' | '/admin/passwort'
+  to: '/' | '/unlock' | '/admin/passwort' | '/admin/protokoll'
+  id: '__root__' | '/' | '/unlock' | '/admin/passwort' | '/admin/protokoll'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   UnlockRoute: typeof UnlockRoute
   AdminPasswortRoute: typeof AdminPasswortRoute
+  AdminProtokollRoute: typeof AdminProtokollRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPasswortRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/protokoll': {
+      id: '/admin/protokoll'
+      path: '/admin/protokoll'
+      fullPath: '/admin/protokoll'
+      preLoaderRoute: typeof AdminProtokollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   UnlockRoute: UnlockRoute,
   AdminPasswortRoute: AdminPasswortRoute,
+  AdminProtokollRoute: AdminProtokollRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

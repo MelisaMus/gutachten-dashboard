@@ -44,7 +44,7 @@ function istFehler(e: AuditEintrag) {
 }
 
 function AdminProtokoll() {
-  const { eintraege } = Route.useLoaderData();
+  const { eintraege } = Route.useLoaderData() as { eintraege: AuditEintrag[] };
   const router = useRouter();
 
   return (
@@ -79,7 +79,7 @@ function AdminProtokoll() {
                   </td>
                 </tr>
               )}
-              {eintraege.map((e) => (
+              {eintraege.map((e: AuditEintrag) => (
                 <tr key={e.id} className="border-t border-border/60">
                   <td className="py-2 pr-4 whitespace-nowrap tabular-nums">
                     {new Date(e.created_at).toLocaleString("de-DE")}
