@@ -2,8 +2,14 @@
  * Datenzugriff auf die zentrale Auftragstabelle – ausschließlich serverseitig
  * und nur nach erfolgreichem Passwort-Gate.
  */
-import { requireUnlocked } from "./gate.server";
+import { requireUnlocked, sessionRolle } from "./gate.server";
+import {
+  protokolliereAenderung,
+  protokolliereAnlage,
+  protokolliereLoeschung,
+} from "./historie.server";
 import type { Auftrag, Fachgebiet, Auftraggeber, Phase, Zusatzgutachten } from "./gutachten";
+
 
 type Row = {
   id: string;
