@@ -24,6 +24,18 @@ export const Route = createFileRoute("/admin/passwort")({
     ],
   }),
   component: AdminPasswort,
+  errorComponent: () => (
+    <div className="min-h-screen bg-background px-6 py-10">
+      <p role="alert" className="mx-auto max-w-lg text-sm text-destructive">
+        Kein Zugriff – bitte als Admin anmelden.
+      </p>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="min-h-screen bg-background px-6 py-10">
+      <p className="mx-auto max-w-lg text-sm text-muted-foreground">Seite nicht gefunden.</p>
+    </div>
+  ),
 });
 
 type Zustand =
