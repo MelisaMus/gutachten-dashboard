@@ -41,6 +41,34 @@ function requestKontext(): { ip: string | null; userAgent: string | null } {
   }
 }
 
+/** IP-Adresse des aktuellen Requests (für die Fehlversuchsbremse). */
+export function aktuelleIp(): string | null {
+  return requestKontext().ip;
+}
+
+/**
+ * Liest die jüngsten sicherheitsrelevanten Ereignisse einer IP innerhalb eines
+ * Zeitfensters – Grundlage für die Fehlversuchsbremse.
+ */
+export async function ereignisseDerIp(
+  ip: string,
+  ereignisse: AuditEreignis[],
+  minuten: number,
+): Promise<{ ereignis: AuditEreignis; created_at: string }[]> {
+  const seit = new Date(Date.now() - minuten * 60_000).toISOString();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("zugriff_protokoll")
+    .select("ereignis, created_at")
+    .eq("ip", ip)
+    .in("ereignis", ereignisse)
+    .gte("created_at", seit)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as { ereignis: AuditEreignis; created_at: string }[];
+}
+
 /** Schreibt einen Protokolleintrag; Fehler dürfen den Ablauf nie blockieren. */
 export async function protokolliere(ereignis: AuditEreignis, rolle: AuditRolle = null): Promise<void> {
   try {
