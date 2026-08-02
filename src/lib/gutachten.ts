@@ -322,3 +322,132 @@ export function gutachterStatistik(liste: Auftrag[]): GutachterStat[] {
     })
     .sort((a, b) => b.ueberfaellig - a.ueberfaellig || a.mittlereLaufzeit - b.mittlereLaufzeit);
 }
+
+/* ---------- Prozess-KPI: Durchlaufzeiten, Überfälligkeiten, Engpässe ---------- */
+
+export type EngpassStatus = "ok" | "beobachten" | "engpass";
+
+export const ENGPASS_LABEL: Record<EngpassStatus, string> = {
+  ok: "Unauffällig",
+  beobachten: "Beobachten",
+  engpass: "Engpass",
+};
+
+export type ProzessSchritt = {
+  phase: Phase;
+  /** Aufträge, die aktuell in diesem Schritt liegen (WIP) */
+  anzahl: number;
+  /** Anteil an allen offenen Aufträgen in Prozent */
+  anteilOffen: number;
+  ueberfaellig: number;
+  fristNaht: number;
+  /** Mittlere Laufzeit seit Auftragseingang in Wochen */
+  mittlereLaufzeitWochen: number;
+  /** Längste Laufzeit seit Auftragseingang in Wochen */
+  maxLaufzeitWochen: number;
+  status: EngpassStatus;
+  /** Kurzbegründung des Status, für die Anzeige */
+  hinweis: string;
+};
+
+export type ProzessKpi = {
+  schritte: ProzessSchritt[];
+  /** Median der Laufzeit offener Aufträge in Wochen */
+  medianLaufzeitWochen: number;
+  /** 90. Perzentil der Laufzeit offener Aufträge in Wochen */
+  p90LaufzeitWochen: number;
+  /** Anteil offener Aufträge über der Standardfrist von 8 Wochen, in Prozent */
+  quoteUeberStandardfrist: number;
+  engpassSchritte: Phase[];
+};
+
+const ABGESCHLOSSENE_PHASEN: Phase[] = ["Versandt", "Abgerechnet"];
+
+function istOffen(a: Auftrag): boolean {
+  return !ABGESCHLOSSENE_PHASEN.includes(a.phase);
+}
+
+function mittel(werte: number[]): number {
+  if (werte.length === 0) return 0;
+  return Math.round((werte.reduce((s, w) => s + w, 0) / werte.length) * 10) / 10;
+}
+
+function perzentil(werte: number[], p: number): number {
+  if (werte.length === 0) return 0;
+  const sortiert = [...werte].sort((a, b) => a - b);
+  const index = Math.min(sortiert.length - 1, Math.ceil((p / 100) * sortiert.length) - 1);
+  return sortiert[Math.max(0, index)] ?? 0;
+}
+
+function engpassBewertung(
+  phase: Phase,
+  ueberfaellig: number,
+  mittlereLaufzeit: number,
+  anteilOffen: number,
+  anzahl: number,
+): { status: EngpassStatus; hinweis: string } {
+  if (ABGESCHLOSSENE_PHASEN.includes(phase)) {
+    return { status: "ok", hinweis: "Abgeschlossener Schritt" };
+  }
+  if (ueberfaellig >= 2) {
+    return { status: "engpass", hinweis: `${ueberfaellig} überfällige Aufträge` };
+  }
+  if (mittlereLaufzeit > 8) {
+    return { status: "engpass", hinweis: `Mittlere Laufzeit ${mittlereLaufzeit} Wochen` };
+  }
+  if (anzahl >= 3 && anteilOffen >= 40) {
+    return { status: "engpass", hinweis: `${anteilOffen}\u202f% aller offenen Aufträge stauen hier` };
+  }
+  if (ueberfaellig >= 1) {
+    return { status: "beobachten", hinweis: "1 überfälliger Auftrag" };
+  }
+  if (mittlereLaufzeit >= 6) {
+    return { status: "beobachten", hinweis: `Mittlere Laufzeit ${mittlereLaufzeit} Wochen` };
+  }
+  if (anzahl === 0) return { status: "ok", hinweis: "Kein Auftrag in diesem Schritt" };
+  return { status: "ok", hinweis: "Im Zeitplan" };
+}
+
+export function prozessKpi(liste: Auftrag[]): ProzessKpi {
+  const offene = liste.filter(istOffen);
+  const offeneLaufzeiten = offene.map((a) => wochenSeit(a.auftragEingangAm));
+
+  const schritte: ProzessSchritt[] = PHASEN.map((phase) => {
+    const items = liste.filter((a) => a.phase === phase);
+    const laufzeiten = items.map((a) => wochenSeit(a.auftragEingangAm));
+    const ueberfaellig = items.filter((a) => ampel(a) === "rot").length;
+    const mittlereLaufzeitWochen = mittel(laufzeiten);
+    const anteilOffen =
+      offene.length > 0 && !ABGESCHLOSSENE_PHASEN.includes(phase)
+        ? Math.round((items.length / offene.length) * 100)
+        : 0;
+    const { status, hinweis } = engpassBewertung(
+      phase,
+      ueberfaellig,
+      mittlereLaufzeitWochen,
+      anteilOffen,
+      items.length,
+    );
+    return {
+      phase,
+      anzahl: items.length,
+      anteilOffen,
+      ueberfaellig,
+      fristNaht: items.filter((a) => ampel(a) === "gelb").length,
+      mittlereLaufzeitWochen,
+      maxLaufzeitWochen: laufzeiten.length ? Math.max(...laufzeiten) : 0,
+      status,
+      hinweis,
+    };
+  });
+
+  return {
+    schritte,
+    medianLaufzeitWochen: perzentil(offeneLaufzeiten, 50),
+    p90LaufzeitWochen: perzentil(offeneLaufzeiten, 90),
+    quoteUeberStandardfrist: offene.length
+      ? Math.round((offeneLaufzeiten.filter((w) => w > 8).length / offene.length) * 100)
+      : 0,
+    engpassSchritte: schritte.filter((s) => s.status === "engpass").map((s) => s.phase),
+  };
+}

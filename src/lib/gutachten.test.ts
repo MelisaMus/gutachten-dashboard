@@ -5,11 +5,14 @@ import {
   eskalation,
   gutachterStatistik,
   plusTage,
+  prozessKpi,
   standardfrist,
   tageBis,
   wochenSeit,
+  PHASEN,
   type Auftrag,
 } from "./gutachten";
+
 
 function auftrag(overrides: Partial<Auftrag> = {}): Auftrag {
   return {
@@ -134,5 +137,63 @@ describe("Kennzahlen", () => {
     const ga02 = stats.find((s) => s.kuerzel === "GA-02");
     expect(ga02?.offen).toBe(2);
     expect(ga02?.verlaengerungen).toBe(3);
+  });
+});
+
+describe("prozessKpi", () => {
+  const basis = (over: Partial<Auftrag>): Auftrag => ({
+    id: Math.random().toString(36).slice(2),
+    aktenzeichen: "AZ-1",
+    auftraggeber: "Gericht",
+    fach: "Neurologie",
+    gutachterKuerzel: "GA-01",
+    auftragEingangAm: plusTage(-7),
+    terminAm: null,
+    fristAm: plusTage(49),
+    phase: "Auftragseingang",
+    zusatz: [],
+    abrechnungsdatenKomplett: true,
+    fristverlaengerungen: 0,
+    notiz: "",
+    ...over,
+  });
+
+  it("listet alle Prozessschritte", () => {
+    const k = prozessKpi([]);
+    expect(k.schritte.map((s) => s.phase)).toEqual(PHASEN);
+    expect(k.medianLaufzeitWochen).toBe(0);
+    expect(k.engpassSchritte).toEqual([]);
+  });
+
+  it("markiert einen Schritt mit zwei überfälligen Aufträgen als Engpass", () => {
+    const spaet = { phase: "In Bearbeitung" as const, auftragEingangAm: plusTage(-90), fristAm: plusTage(-10) };
+    const k = prozessKpi([basis(spaet), basis(spaet), basis({})]);
+    const schritt = k.schritte.find((s) => s.phase === "In Bearbeitung")!;
+    expect(schritt.ueberfaellig).toBe(2);
+    expect(schritt.status).toBe("engpass");
+    expect(k.engpassSchritte).toContain("In Bearbeitung");
+  });
+
+  it("berechnet Laufzeiten, Anteil und Quote über Standardfrist", () => {
+    const k = prozessKpi([
+      basis({ auftragEingangAm: plusTage(-14) }),
+      basis({ phase: "Terminiert", auftragEingangAm: plusTage(-70), fristAm: plusTage(-1) }),
+    ]);
+    const eingang = k.schritte.find((s) => s.phase === "Auftragseingang")!;
+    expect(eingang.anzahl).toBe(1);
+    expect(eingang.anteilOffen).toBe(50);
+    expect(eingang.mittlereLaufzeitWochen).toBe(2);
+    expect(k.quoteUeberStandardfrist).toBe(50);
+    expect(k.p90LaufzeitWochen).toBe(10);
+  });
+
+  it("bewertet abgeschlossene Schritte nie als Engpass", () => {
+    const alt = { auftragEingangAm: plusTage(-200), fristAm: plusTage(-150) };
+    const k = prozessKpi([
+      basis({ phase: "Versandt", ...alt }),
+      basis({ phase: "Abgerechnet", ...alt }),
+    ]);
+    expect(k.schritte.filter((s) => s.status === "engpass")).toHaveLength(0);
+    expect(k.quoteUeberStandardfrist).toBe(0);
   });
 });

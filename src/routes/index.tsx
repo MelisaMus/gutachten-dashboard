@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { KpiPanel } from "@/components/gutachten/KpiPanel";
 import { AuftragListe } from "@/components/gutachten/AuftragListe";
 import { GutachterPanel } from "@/components/gutachten/GutachterPanel";
+import { ProzessPanel } from "@/components/gutachten/ProzessPanel";
+
 import { NeuerAuftragDialog } from "@/components/gutachten/NeuerAuftragDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -202,9 +204,10 @@ function Dashboard() {
             ))}
           </Tabs>
         </section>
-
+        <ProzessPanel auftraege={auftraege} />
 
         <GutachterPanel auftraege={auftraege} />
+
 
         <section className="panel p-4 sm:p-5">
           <h2 className="font-display text-lg font-semibold">Datenschutz & Zugriff</h2>
