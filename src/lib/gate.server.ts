@@ -215,7 +215,11 @@ export async function checkResetGrant(token: string): Promise<{ gueltig: boolean
 export async function redeemResetGrant(
   token: string,
   neuesPasswort: string,
-): Promise<{ ok: true } | { ok: false; grund: "token" | "policy" }> {
+): Promise<{ ok: true } | { ok: false; grund: "token" | "policy" | "gesperrt" }> {
+  if ((await bremseStatus()).gesperrt) {
+    await protokolliere("ip_abgewiesen");
+    return { ok: false, grund: "gesperrt" };
+  }
   const row = await findGrant(token);
   if (!row) {
     await protokolliere("reset_freigabe_fehlgeschlagen");
