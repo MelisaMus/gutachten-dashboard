@@ -63,6 +63,5 @@ export function GutachterPanel({ auftraege }: { auftraege: Auftrag[] }) {
       </div>
     </section>
 
-    </section>
   );
 }
